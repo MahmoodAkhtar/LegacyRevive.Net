@@ -427,3 +427,25 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# JetBrains Rider / IntelliJ IDE metadata
+.idea/
+*.sln.iml
+
+# ----------------------------------------------------------------------
+# LegacyRevive.NET controlled recovery corpus
+#
+# The corpus intentionally contains deployment/build artifacts that are
+# normally ignored in ordinary .NET repositories. These files are test
+# and validation inputs, not build output from LegacyRevive.NET itself.
+# ----------------------------------------------------------------------
+
+!corpus/**/*.pdb
+!corpus/**/*.nupkg
+!corpus/**/*.snupkg
+
+!corpus/**/[Bb]in/
+!corpus/**/[Bb]in/**
+
+!corpus/**/[Pp]ackages/
+!corpus/**/[Pp]ackages/**
