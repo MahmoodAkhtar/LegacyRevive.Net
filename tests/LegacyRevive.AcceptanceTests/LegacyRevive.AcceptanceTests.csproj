@@ -12,6 +12,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../src/LegacyRevive.Application/LegacyRevive.Application.csproj" />
+    <ProjectReference Include="../../src/LegacyRevive.Infrastructure.Local/LegacyRevive.Infrastructure.Local.csproj" />
   </ItemGroup>
 </Project>

@@ -3,9 +3,11 @@
     <Project Path="src/LegacyRevive.Application/LegacyRevive.Application.csproj" />
     <Project Path="src/LegacyRevive.Cli/LegacyRevive.Cli.csproj" />
     <Project Path="src/LegacyRevive.Domain/LegacyRevive.Domain.csproj" />
+    <Project Path="src/LegacyRevive.Infrastructure.Local/LegacyRevive.Infrastructure.Local.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/LegacyRevive.Application.Tests/LegacyRevive.Application.Tests.csproj" />
+    <Project Path="tests/LegacyRevive.AcceptanceTests/LegacyRevive.AcceptanceTests.csproj" />
     <Project Path="tests/LegacyRevive.Domain.Tests/LegacyRevive.Domain.Tests.csproj" />
   </Folder>
 </Solution>

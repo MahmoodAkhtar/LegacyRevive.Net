@@ -1,6 +1,6 @@
 # DEV-SPEC-001 — Workspace + Local Artifact Intake
 
-Status: Ready for Implementation  
+Status: Implemented
 Blocked by: None  
 Supersedes: None  
 Superseded by: None  
@@ -406,13 +406,12 @@ Verifies:
 
 ## Executable verification
 
-Planned acceptance verification:
+Acceptance verification:
 
 - Test framework: xUnit v3, as selected by `13-tooling-and-dependencies.md`.
 - Preferred verification level: Application-level acceptance tests using the same application use-case/port boundaries used by the production host, with real local filesystem + real SQLite persistence where practical.
-- Proposed repository location:
+- Repository location:
   - `tests/LegacyRevive.AcceptanceTests/Development/DevSpec001WorkspaceLocalArtifactIntakeTests.cs`
-  - or an equivalently named acceptance-test location consistent with the repository's emerging test-project structure.
 
 Coverage mapping:
 
@@ -428,11 +427,18 @@ Acceptance tests should assert observable application/domain state and preserved
 
 Because the exact internal `.legacyrevive` layout is non-canonical, acceptance verification may assert only that LegacyRevive.NET-owned preserved state/bytes are beneath that reserved boundary, not a particular subdirectory naming scheme unless later governance makes one canonical.
 
-The planned test path remains non-canonical implementation organization and may be adjusted without changing the acceptance contract.
+The test path remains non-canonical implementation organization and may be adjusted without changing the acceptance contract.
 
 ## Supporting verification
 
-Planned lower-level verification should include, as implementation structure requires:
+Lower-level verification locations:
+
+- `tests/LegacyRevive.Domain.Tests/Artifacts/ArtifactTests.cs`
+- `tests/LegacyRevive.Application.Tests/Intake/ArtifactIntakeServiceTests.cs`
+- `tests/LegacyRevive.AcceptanceTests/Supporting/LocalArtifactStoreTests.cs`
+- `tests/LegacyRevive.AcceptanceTests/Supporting/SqliteWorkspaceStoreTests.cs`
+
+Lower-level verification includes, as implementation structure requires:
 
 - Domain/unit tests:
   - Artifact identity is separate from content hash/path/storage location.
@@ -461,7 +467,7 @@ Planned lower-level verification should include, as implementation structure req
   - one-artifact failure does not silently corrupt the state of successfully preserved artifacts.
 - Host/CLI tests only where implementation exposes DEV-SPEC-001 directly through an MVP command path during this slice. The canonical `recover` command ultimately spans later stages, so this DEV-SPEC does not require the full end-to-end `recover` behavior to exist yet.
 
-Actual test-project/file locations must replace these planned references while the specification is `In Progress`, as required by `16-development-process.md`.
+The actual test-project/file locations above replaced the planned references while the specification was `In Progress`, as required by `16-development-process.md`.
 
 ## Qualifications discovered
 
@@ -487,11 +493,11 @@ Those remain implementation choices only while they preserve the acceptance cont
 
 ## Verification status
 
-Acceptance verification: Pending implementation.  
-Supporting verification: Pending implementation.  
+Acceptance verification: Satisfied by `tests/LegacyRevive.AcceptanceTests/Development/DevSpec001WorkspaceLocalArtifactIntakeTests.cs`; scenarios S1–S7 cover AC-INTAKE-001 through AC-INTAKE-015 according to the mapping above.
+Supporting verification: Satisfied by the recorded domain, application, filesystem/artifact-store, SQLite persistence, replay/resume, determinism, transaction, and failure-path test locations.
 Blocking qualifications: None.  
 
-The specification is baselined as `Ready for Implementation`: canonical basis, scope, acceptance contract, representative scenarios, and executable-verification approach are defined, with no currently known material unresolved design question being silently assumed.
+The canonical basis and bounded scope remain coherent. Automated acceptance and required supporting verification pass repeatably, actual verification locations are recorded, architecture/tooling/evidence/MVP boundaries are respected, and no material design qualification was exposed during implementation.
 
 The slice must not transition to `Implemented` until the Definition of Done in `16-development-process.md` is satisfied, including repeatable executable acceptance verification, required supporting verification, recorded actual verification locations, no unresolved blocker, and any governance change exposed during implementation having completed its synchronization lifecycle.
 
@@ -501,3 +507,6 @@ The slice must not transition to `Implemented` until the Definition of Done in `
 |---|---|---|
 | 2026-09-27 | Created → Draft | Initial DEV-SPEC-001 formulated from current canonical workspace/intake/preservation requirements after DEV-001 resolution. |
 | 2026-09-27 | Draft → Ready for Implementation | Canonical basis, bounded scope, acceptance contract, representative scenarios, executable-verification approach, and supporting-verification plan established; no current governance blocker identified. |
+| 2026-09-27 | Ready for Implementation → In Progress | Readiness and blocker audit completed; executable acceptance and production implementation commenced against the accepted baseline. |
+| 2026-09-27 | In Progress → Verification Pending | S1–S7 acceptance implementation and required domain, filesystem, persistence, replay, determinism, and failure-path support were complete and passing in development verification. |
+| 2026-09-27 | Verification Pending → Implemented | Complete Release verification passed for all acceptance and supporting suites; the Definition of Done was satisfied with no blocking qualification. |

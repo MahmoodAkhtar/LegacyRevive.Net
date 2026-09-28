@@ -85,8 +85,10 @@ BenchmarkDotNet.Artifacts/
 # .NET Core
 project.lock.json
 project.fragment.lock.json
-artifacts/
-.artifacts/
+# Repository-root .NET build output (anchored so source folders named
+# "Artifacts" remain trackable).
+/artifacts/
+/.artifacts/
 
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt
