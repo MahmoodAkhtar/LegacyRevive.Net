@@ -289,6 +289,7 @@ Related qualifications: <IDs or None>
 | D168 | Material Implementation Uses Canonical Development Process and Development Slice Specifications | Accepted |
 | D169 | LegacyRevive.NET Repository Solution Is `LegacyRevive.Net.slnx` | Accepted |
 | D170 | Intake Discovery Failure Preserves Known State Without Fabricating Artifacts | Accepted |
+| D171 | Positive Stage 01 File Discovery Survives Later Descendant-Discovery Failure | Accepted |
 
 ---
 
@@ -5506,6 +5507,57 @@ The distinction applies the established Partial/Blocked and scoped-diagnostic mo
 - diagnostics use the narrowest reliably established source/directory/subtree scope when no Artifact exists;
 - MVP implementation must cover root and subtree discovery failure without requiring a richer filesystem-capture ontology;
 - D134's requirement to inventory every supplied file is interpreted at the discovery boundary as every supplied file actually discovered by intake; inability to enumerate possible additional contents remains explicit rather than being treated as either inventory success or historical absence.
+
+### Supersedes
+
+None
+
+### Superseded by
+
+None
+
+---
+
+
+## D171 — Positive Stage 01 File Discovery Survives Later Descendant-Discovery Failure
+
+Status: Accepted  
+Date: 2026-09-29  
+Origin: `91-design-qualification-register.md`; PROC-011 governance resolution  
+Related qualifications: PROC-011
+
+### Decision
+
+When Stage 01 has successfully and completely identified one or more supplied files within a known directory, those positive file discoveries remain trustworthy discovered state even if a subsequent discovery operation for possible child-directory or descendant scopes from that same directory fails.
+
+A later descendant-discovery failure does not retroactively invalidate positively established file discoveries merely because the implementation performed both operations while processing the same directory. The discovered files remain eligible for ordinary Artifact admission and preservation.
+
+The failed descendant-discovery operation makes supplied-source discovery incomplete for the affected scope. The failure is represented at the narrowest reliably established non-Artifact source/directory/subtree scope, the affected scope is Blocked, and the overall Recovery Run may be Partial when trustworthy discovered state is retained. Any Recovery Intake Snapshot represents only the actually admitted Artifact instances and explicitly records incomplete discovery; it does not claim that unknown descendants are absent or that the admitted set is complete.
+
+This rule also applies when the known directory being processed is the supplied root, provided positive file discovery has already established a trustworthy supplied Artifact subset. This condition is distinct from total root discovery failure in which the root cannot be enumerated sufficiently to establish any trustworthy supplied Artifact set.
+
+Successful enumeration that establishes no direct files does not by itself establish a trustworthy non-empty or empty supplied Artifact subset when subsequent descendant discovery fails. An incomplete empty snapshot is therefore not justified solely by a zero-file direct enumeration; the state remains Blocked unless other trustworthy discovered Artifact state has been established.
+
+The decision does not require directory Artifact identities, a canonical filesystem graph, filesystem journaling, transactional source snapshots, or claims about the number, names, types, or historical existence of undiscovered descendants.
+
+### Rationale
+
+Stage 01 discovery is literal and evidence-disciplined. A completed positive discovery establishes concrete supplied file instances. A later failure to discover different possible descendant scopes establishes uncertainty about those descendants, not a reason to erase already established positive state.
+
+Treating both operations as one atomic semantic unit would make canonical recovery state depend on incidental traversal/API grouping and would discard trustworthy partial progress without a canonical justification. Retaining positive state while marking descendant discovery incomplete applies D170's partial-progress rule at the narrowest reliable boundary without fabricating Artifacts or overstating completeness.
+
+The zero-direct-file case remains distinct because successful observation of zero direct files does not establish whether undiscovered descendant files exist; without another positively discovered Artifact subset there is no trustworthy admitted set from which to form a Partial intake snapshot.
+
+### Consequences
+
+- Stage 01 implementations must commit positively established file discoveries independently of later descendant-discovery success for the same known directory.
+- A later child-directory/descendant enumeration failure must not discard those discovered files.
+- When such positive state survives, the run may be Partial and an incomplete Recovery Intake Snapshot may be produced for the admitted Artifact set.
+- Total root discovery failure remains Blocked without a Recovery Intake Snapshot when no trustworthy supplied Artifact subset has been established.
+- Diagnostic scope must describe the failed descendant-discovery boundary rather than falsely implying that successfully discovered files failed discovery.
+- Persistence/checkpoint/replay must retain the admitted Artifact set, incomplete-discovery state, and applicable failed-scope diagnostics.
+- Implementation details may use internal traversal structures, but they do not become canonical filesystem entities.
+- The post-implementation issue discovered after DEV-SPEC-002 requires a new bounded Development Slice; DEV-SPEC-002 remains unchanged as historical implementation/verification record.
 
 ### Supersedes
 

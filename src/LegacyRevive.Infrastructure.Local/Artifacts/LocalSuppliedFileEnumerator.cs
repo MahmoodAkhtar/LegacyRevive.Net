@@ -31,12 +31,9 @@ public class LocalSuppliedFileEnumerator : ISuppliedFileEnumerator
             pending.Remove(current.Key);
 
             string[] directoryFiles;
-            string[] childDirectories;
             try
             {
                 directoryFiles = EnumerateFiles(current.Value).ToArray();
-                cancellationToken.ThrowIfCancellationRequested();
-                childDirectories = EnumerateDirectories(current.Value).ToArray();
             }
             catch (OperationCanceledException)
             {
@@ -60,6 +57,25 @@ public class LocalSuppliedFileEnumerator : ISuppliedFileEnumerator
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 files.Add(new SuppliedFile(NormalizeRelativePath(root, path), Path.GetFullPath(path)));
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            string[] childDirectories;
+            try
+            {
+                childDirectories = EnumerateDirectories(current.Value).ToArray();
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                diagnostics.Add(new IntakeDiscoveryDiagnostic(
+                    "INTAKE_DISCOVERY_FAILED",
+                    exception.Message,
+                    IntakeDiscoveryScope.DirectoryDescendants(current.Key)));
+                continue;
             }
 
             foreach (var path in childDirectories.OrderBy(path => path, StringComparer.Ordinal))

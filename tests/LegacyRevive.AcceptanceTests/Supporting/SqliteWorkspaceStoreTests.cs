@@ -135,6 +135,53 @@ public sealed class SqliteWorkspaceStoreTests
     }
 
     [Fact]
+    public async Task PartialRootDescendantFailureRoundTripsDistinctFromTotalRootFailureAndKnownEmpty()
+    {
+        using var test = new TestWorkspace();
+        var boundary = new LocalWorkspaceBoundary(Path.Combine(test.Root, "workspace"));
+        await boundary.CreateAsync(TestContext.Current.CancellationToken);
+        var repository = new SqliteIntakeStateRepository(boundary);
+        var workspaceId = WorkspaceId.Create();
+        await repository.InitializeAsync(workspaceId, TestContext.Current.CancellationToken);
+        var runId = RecoveryRunId.Create();
+        var artifact = OriginalArtifact.Pending(
+                ArtifactId.Create(),
+                runId,
+                SuppliedArtifactProvenance.Create("root.bin", "capture"))
+            .MarkPreserved(Sha256Hash.FromHex(new string('c', 64)), ".legacyrevive/artifacts/root.bin");
+        var snapshot = new RecoveryIntakeSnapshot(
+            IntakeSnapshotId.Create(),
+            runId,
+            [artifact.Id],
+            SuppliedSourceDiscoveryCompleteness.Incomplete);
+        var state = new RecoveryWorkspaceState(
+            workspaceId,
+            new RecoveryRun(runId, RecoveryRunOutcome.Partial, "tool", "config"),
+            snapshot,
+            new RecoveryCheckpoint(RecoveryCheckpointId.Create(), runId, snapshot.Id, "root-partial-hash"),
+            [artifact],
+            [new IntakeDiscoveryDiagnostic(
+                "INTAKE_DISCOVERY_FAILED",
+                "Descendant discovery failed.",
+                IntakeDiscoveryScope.DirectoryDescendants("."))]);
+
+        await repository.SaveAsync(state, TestContext.Current.CancellationToken);
+        var reopened = await repository.LoadCurrentAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(state.Run, reopened.Run);
+        Assert.Equal(state.IntakeSnapshot!.Id, reopened.IntakeSnapshot!.Id);
+        Assert.Equal(state.IntakeSnapshot.RecoveryRunId, reopened.IntakeSnapshot.RecoveryRunId);
+        Assert.Equal(state.IntakeSnapshot.DiscoveryCompleteness, reopened.IntakeSnapshot.DiscoveryCompleteness);
+        Assert.Equal(state.IntakeSnapshot.ArtifactIds, reopened.IntakeSnapshot.ArtifactIds);
+        Assert.Equal(state.Checkpoint, reopened.Checkpoint);
+        Assert.Equal(state.Artifacts, reopened.Artifacts);
+        var diagnostic = Assert.Single(reopened.DiscoveryDiagnostics);
+        Assert.Equal(IntakeDiscoveryScopeKind.DirectoryDescendants, diagnostic.Scope.Kind);
+        Assert.Equal(".", diagnostic.Scope.RelativePath);
+        Assert.NotEqual(IntakeDiscoveryScopeKind.SuppliedSource, diagnostic.Scope.Kind);
+    }
+
+    [Fact]
     public async Task RootBlockedRunRoundTripsWithoutSnapshotAndDiffersFromCompleteEmpty()
     {
         using var test = new TestWorkspace();

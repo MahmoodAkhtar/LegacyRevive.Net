@@ -212,6 +212,7 @@ It establishes:
 - Recovery Workspace / Recovery Run / Recovery Checkpoint;
 - partial and blocked recovery states;
 - Stage 01 supplied-source discovery distinguished from Artifact preservation, including explicit incomplete-enumeration semantics;
+- positive Stage 01 file discovery remains trustworthy when later descendant discovery for the same known directory fails, with partial-root discovery kept distinct from total root discovery failure;
 - build/validation feedback boundaries.
 
 The process coordinates `03`–`06` without changing their semantic categories.

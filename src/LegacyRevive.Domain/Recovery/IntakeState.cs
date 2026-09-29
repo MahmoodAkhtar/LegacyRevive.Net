@@ -19,7 +19,8 @@ public enum SuppliedSourceDiscoveryCompleteness
 public enum IntakeDiscoveryScopeKind
 {
     SuppliedSource = 0,
-    DirectorySubtree = 1
+    DirectorySubtree = 1,
+    DirectoryDescendants = 2
 }
 
 public sealed record IntakeDiscoveryScope
@@ -52,11 +53,34 @@ public sealed record IntakeDiscoveryScope
         return new IntakeDiscoveryScope(IntakeDiscoveryScopeKind.DirectorySubtree, normalized);
     }
 
+    public static IntakeDiscoveryScope DirectoryDescendants(string relativePath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(relativePath);
+        if (Path.IsPathRooted(relativePath))
+        {
+            throw new ArgumentException("Discovery scope must be relative to the supplied source.", nameof(relativePath));
+        }
+
+        if (relativePath == ".")
+        {
+            return new IntakeDiscoveryScope(IntakeDiscoveryScopeKind.DirectoryDescendants, ".");
+        }
+
+        var normalized = relativePath.Replace('\\', '/').TrimEnd('/');
+        if (normalized is "" or "." || normalized.Split('/').Any(segment => segment is "" or "." or ".."))
+        {
+            throw new ArgumentException("Discovery scope contains an invalid path segment.", nameof(relativePath));
+        }
+
+        return new IntakeDiscoveryScope(IntakeDiscoveryScopeKind.DirectoryDescendants, normalized);
+    }
+
     public static IntakeDiscoveryScope Rehydrate(IntakeDiscoveryScopeKind kind, string relativePath) =>
         kind switch
         {
             IntakeDiscoveryScopeKind.SuppliedSource when relativePath == "." => SuppliedSource(),
             IntakeDiscoveryScopeKind.DirectorySubtree => DirectorySubtree(relativePath),
+            IntakeDiscoveryScopeKind.DirectoryDescendants => DirectoryDescendants(relativePath),
             _ => throw new ArgumentException("The persisted discovery scope is invalid.", nameof(relativePath))
         };
 }
@@ -134,9 +158,11 @@ public sealed record RecoveryWorkspaceState
         if (intakeSnapshot is null)
         {
             if (run.Outcome != RecoveryRunOutcome.Blocked || Artifacts.Count != 0 ||
-                !DiscoveryDiagnostics.Any(diagnostic => diagnostic.Scope.Kind == IntakeDiscoveryScopeKind.SuppliedSource))
+                !DiscoveryDiagnostics.Any(diagnostic =>
+                    diagnostic.Scope.Kind == IntakeDiscoveryScopeKind.SuppliedSource ||
+                    diagnostic.Scope is { Kind: IntakeDiscoveryScopeKind.DirectoryDescendants, RelativePath: "." }))
             {
-                throw new ArgumentException("A snapshot-less intake state must be a root-blocked run with no admitted artifacts and a supplied-source diagnostic.");
+                throw new ArgumentException("A snapshot-less intake state must be a root-blocked run with no admitted artifacts and a root discovery diagnostic.");
             }
 
             return;
@@ -151,6 +177,12 @@ public sealed record RecoveryWorkspaceState
         if (DiscoveryDiagnostics.Any(diagnostic => diagnostic.Scope.Kind == IntakeDiscoveryScopeKind.SuppliedSource))
         {
             throw new ArgumentException("A root-scoped discovery failure cannot be represented by a successful intake snapshot.");
+        }
+
+        if (Artifacts.Count == 0 && DiscoveryDiagnostics.Any(diagnostic =>
+                diagnostic.Scope is { Kind: IntakeDiscoveryScopeKind.DirectoryDescendants, RelativePath: "." }))
+        {
+            throw new ArgumentException("Root descendant-discovery failure without admitted artifacts cannot be represented by an incomplete empty snapshot.");
         }
 
         if (intakeSnapshot.DiscoveryCompleteness == SuppliedSourceDiscoveryCompleteness.Complete && DiscoveryDiagnostics.Count != 0)

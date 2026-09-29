@@ -185,6 +185,71 @@ public sealed class ArtifactIntakeServiceTests
     }
 
     [Fact]
+    public async Task RootDescendantFailureWithPositiveFileCreatesPartialIncompleteSnapshot()
+    {
+        var discovery = SuppliedFileDiscoveryResult.Incomplete(
+            [new SuppliedFile("root.bin", "root")],
+            [new IntakeDiscoveryDiagnostic(
+                "INTAKE_DISCOVERY_FAILED",
+                "Injected descendant failure.",
+                IntakeDiscoveryScope.DirectoryDescendants("."))]);
+        var session = await new ArtifactIntakeService(
+                new MemoryBoundary(),
+                new ResultEnumerator(discovery),
+                new MemoryArtifactStore(),
+                new RecordingRepository())
+            .CreateAndIntakeAsync(new IntakeRequest("source", "capture"), TestContext.Current.CancellationToken);
+
+        Assert.Equal(RecoveryRunOutcome.Partial, session.State.Run.Outcome);
+        Assert.Equal(SuppliedSourceDiscoveryCompleteness.Incomplete, session.State.IntakeSnapshot!.DiscoveryCompleteness);
+        Assert.Equal("root.bin", Assert.Single(session.State.Artifacts).Provenance.RelativePath);
+        Assert.Equal(IntakeDiscoveryScopeKind.DirectoryDescendants, Assert.Single(session.State.DiscoveryDiagnostics).Scope.Kind);
+    }
+
+    [Fact]
+    public async Task RootDescendantFailureWithoutPositiveFileIsBlockedAndSnapshotless()
+    {
+        var discovery = SuppliedFileDiscoveryResult.Incomplete(
+            [],
+            [new IntakeDiscoveryDiagnostic(
+                "INTAKE_DISCOVERY_FAILED",
+                "Injected descendant failure.",
+                IntakeDiscoveryScope.DirectoryDescendants("."))]);
+        var session = await new ArtifactIntakeService(
+                new MemoryBoundary(),
+                new ResultEnumerator(discovery),
+                new MemoryArtifactStore(),
+                new RecordingRepository())
+            .CreateAndIntakeAsync(new IntakeRequest("source"), TestContext.Current.CancellationToken);
+
+        Assert.Equal(RecoveryRunOutcome.Blocked, session.State.Run.Outcome);
+        Assert.Null(session.State.IntakeSnapshot);
+        Assert.Empty(session.State.Artifacts);
+    }
+
+    [Fact]
+    public async Task RootDescendantAndAdmittedArtifactPreservationFailuresRemainSeparatelyScoped()
+    {
+        var discovery = SuppliedFileDiscoveryResult.Incomplete(
+            [new SuppliedFile("bad.bin", "bad")],
+            [new IntakeDiscoveryDiagnostic(
+                "INTAKE_DISCOVERY_FAILED",
+                "Injected descendant failure.",
+                IntakeDiscoveryScope.DirectoryDescendants("."))]);
+        var session = await new ArtifactIntakeService(
+                new MemoryBoundary(),
+                new ResultEnumerator(discovery),
+                new MemoryArtifactStore("bad.bin"),
+                new RecordingRepository())
+            .CreateAndIntakeAsync(new IntakeRequest("source"), TestContext.Current.CancellationToken);
+
+        Assert.Equal(IntakeDiscoveryScopeKind.DirectoryDescendants, Assert.Single(session.State.DiscoveryDiagnostics).Scope.Kind);
+        var artifact = Assert.Single(session.State.Artifacts);
+        Assert.Equal(ArtifactPreservationStatus.Failed, artifact.PreservationStatus);
+        Assert.Equal("TEST_FAILURE", artifact.Diagnostic?.Code);
+    }
+
+    [Fact]
     public async Task CheckpointSubstanceIncludesDiscoveryCompletenessAndDiagnostics()
     {
         var complete = await CreateService(new RecordingRepository(), new MemoryArtifactStore(), new SuppliedFile("safe.bin", "safe"))

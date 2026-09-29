@@ -111,6 +111,8 @@ The MVP must preserve the Stage 01 discovery-completeness semantics defined by `
 - a completely enumerable empty directory is a known empty supplied set and may produce a valid empty Recovery Intake Snapshot;
 - a supplied root that cannot be enumerated sufficiently to establish a trustworthy supplied set is Blocked and must not be represented as a successful empty intake;
 - when a narrower subtree cannot be enumerated but other files are safely discovered, the trustworthy discovered files may be retained, the failed discovery scope remains explicit/Blocked, and the run may be Partial;
+- when direct file discovery within a known directory has succeeded but subsequent discovery of possible child-directory/descendant scopes from that same directory fails, the positively discovered files remain trustworthy and eligible for admission/preservation; the later failure makes discovery incomplete rather than retroactively erasing those files;
+- the same rule applies at the supplied root when positive file discovery has established a trustworthy supplied Artifact subset, which remains distinct from total root discovery failure; successful zero-file direct enumeration followed by descendant-discovery failure does not by itself justify an incomplete empty snapshot;
 - no Artifact identity is created for possible files that were never discovered;
 - a file discovered before later read/preservation failure follows the ordinary Artifact-scoped preservation-failure model.
 
@@ -168,7 +170,7 @@ The MVP does not promise semantic reconstruction of:
 
 Such material may still be inventoried and preserved.
 
-**Governance:** MVP-003 / D134; PROC-010 / D170.
+**Governance:** MVP-003 / D134; PROC-010 / D170; PROC-011 / D171.
 
 ---
 

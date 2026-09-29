@@ -68,7 +68,12 @@ public sealed class ArtifactIntakeService(
                     result.ContentHash));
         }
 
-        var outcome = discovery.IsRootBlocked
+        var rootDescendantDiscoveryWithoutFiles =
+            discovery.Files.Count == 0 &&
+            discovery.Diagnostics.Any(diagnostic =>
+                diagnostic.Scope is { Kind: IntakeDiscoveryScopeKind.DirectoryDescendants, RelativePath: "." });
+        var hasNoTrustworthyRootArtifactSet = discovery.IsRootBlocked || rootDescendantDiscoveryWithoutFiles;
+        var outcome = hasNoTrustworthyRootArtifactSet
             ? RecoveryRunOutcome.Blocked
             : discovery.Completeness == SuppliedSourceDiscoveryCompleteness.Incomplete ||
               artifacts.Any(artifact => artifact.PreservationStatus == ArtifactPreservationStatus.Failed)
@@ -81,7 +86,7 @@ public sealed class ArtifactIntakeService(
             .ThenBy(diagnostic => diagnostic.Code, StringComparer.Ordinal)
             .ThenBy(diagnostic => diagnostic.Message, StringComparer.Ordinal)
             .ToArray();
-        var snapshot = discovery.IsRootBlocked
+        var snapshot = hasNoTrustworthyRootArtifactSet
             ? null
             : new RecoveryIntakeSnapshot(
                 IntakeSnapshotId.Create(),

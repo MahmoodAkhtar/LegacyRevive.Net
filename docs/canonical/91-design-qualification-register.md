@@ -582,6 +582,7 @@ The governance update is not complete until these checks agree.
 | PROC-008 | Partial Blocked and Baseline States | Resolved | Question | `07-recovery-process.md` |
 | PROC-009 | Validation Feedback Boundary | Resolved | Boundary Issue | `07-recovery-process.md` |
 | PROC-010 | Incomplete Supplied-Directory Enumeration During Intake | Resolved | Boundary Issue | `07-recovery-process.md` |
+| PROC-011 | Positive File Discovery Before Later Descendant-Discovery Failure | Resolved | Ambiguity | `07-recovery-process.md` |
 | PROJ-001 | Candidate Project vs Original Project | Resolved | Boundary Issue | `08-project-reconstruction.md` |
 | PROJ-002 | Assembly Boundary as Project Candidate Anchor | Resolved | Question | `08-project-reconstruction.md` |
 | PROJ-003 | Project Boundary Support and Conflict | Resolved | Question | `08-project-reconstruction.md` |
@@ -3321,6 +3322,89 @@ D170
 `07-recovery-process.md` §§3, 24–26; `12-architecture.md` §§17–18, 20; `14-mvp.md` §4
 
 ---
+
+
+## PROC-011 — Positive File Discovery Before Later Descendant-Discovery Failure
+
+Status: Resolved  
+Type: Ambiguity  
+Origin: Post-implementation audit of `DEV-SPEC-002 — Intake Enumeration Failure Handling`  
+Owner document: `07-recovery-process.md`  
+Depends on: D003, D049, D061, D113, D114, D134, D168, D170; PROC-010  
+Blocks: Follow-up Stage 01 positive-discovery/descendant-failure Development Slice until resolution
+
+### Qualification
+
+When Stage 01 successfully establishes the supplied file instances directly discoverable within a known directory, but subsequent discovery of possible child-directory or descendant scopes for that same directory fails, does the successfully established direct-file state remain trustworthy discovered state eligible for ordinary Artifact admission/preservation?
+
+In particular, is successful positive file discovery independently established Stage 01 state, or is it provisional until all discovery operations associated with the containing directory succeed; how does this apply when the containing directory is the supplied root; when is the resulting run Partial versus wholly Blocked; and what diagnostic scope applies without introducing unsupported directory or filesystem entities?
+
+### Why it matters
+
+PROC-010 / D170 established that trustworthy discovered state may survive narrower discovery failure and that failures should not fabricate Artifacts or invalidate unrelated recovery state.
+
+The DEV-SPEC-002 traversal implementation nevertheless materialized direct files and child directories inside one failure boundary and committed the direct-file discoveries only after both operations succeeded. A later child-directory discovery failure could therefore discard file instances whose direct enumeration had already completed successfully. At the supplied root, that implementation behavior could collapse partially established positive discovery into a total root failure with no discovered files.
+
+The canonical documents did not explicitly define whether those two discovery activities form one atomic semantic discovery unit. The assumption affects Artifact admission, Partial/Blocked state, Recovery Intake Snapshot validity, diagnostic scope, persistence, replay, determinism, and MVP intake behavior, so it cannot be settled merely by rearranging filesystem calls or adding a test.
+
+### Current understanding
+
+Before resolution, the following was already established:
+
+- Stage 01 identifies the supplied artifact set only to the extent actually established by discovery.
+- Artifact identity is created only for supplied files actually discovered and admitted.
+- Trustworthy completed work remains usable where partial recovery is safe.
+- Discovery failure should be scoped to the narrowest reliably established boundary and should not automatically invalidate unrelated recovery state.
+- A narrower Blocked discovery scope may coexist with a Partial Recovery Run.
+- Undiscovered possible contents must not be fabricated as Artifacts or treated as known absent.
+- An incomplete Recovery Intake Snapshot represents actually admitted Artifact instances and does not claim complete knowledge of the supplied tree.
+- A supplied root that cannot be enumerated sufficiently to establish a trustworthy supplied Artifact set remains Blocked and must not masquerade as known-empty successful discovery.
+- No accepted direction requires a filesystem graph, directory identity model, filesystem journal, or transactional point-in-time source snapshot.
+- DEV-SPEC-002 is an Implemented, historically stable Development Slice Specification and must not be retroactively rewritten to make this later issue appear part of its original acceptance record.
+
+What remained unsettled was whether a completed positive file enumeration within a directory is independently trustworthy when a later discovery operation for descendant directory scopes from that same directory fails.
+
+### Resolution criteria
+
+Resolution required explicit answers for:
+
+1. when a positively discovered supplied file becomes trustworthy Stage 01 discovered state;
+2. whether subsequent descendant-directory discovery failure may invalidate such positive discovery;
+3. the semantics for both supplied-root and nested-directory cases;
+4. the distinction between partial root discovery and total root discovery failure;
+5. when the resulting run is Partial versus wholly Blocked;
+6. whether and when an incomplete Recovery Intake Snapshot is valid;
+7. the zero-direct-file case where descendant discovery subsequently fails;
+8. the narrowest reliable diagnostic/blocking scope;
+9. persistence/checkpoint/replay requirements;
+10. protection against fabricated descendants or unsupported absence claims;
+11. confirmation that no filesystem graph, directory-as-Artifact model, journal, or transactional snapshot is required;
+12. the required follow-up Development Slice after governance resolution.
+
+### Resolution
+
+A supplied file becomes trustworthy positive discovery state when Stage 01 has successfully and completely identified that concrete file instance through the applicable discovery operation. That positive state is not provisional merely because another discovery operation for possible child-directory or descendant scopes is performed while processing the same containing directory.
+
+If descendant discovery subsequently fails, the positively discovered files remain trustworthy and remain eligible for ordinary Artifact admission/preservation. The descendant-discovery failure makes discovery incomplete for the affected scope, which is represented as Blocked at the narrowest reliably established non-Artifact source/directory/subtree boundary. When trustworthy discovered Artifact state is retained, the overall Recovery Run may be Partial and an incomplete Recovery Intake Snapshot may represent the actually admitted Artifact set. The snapshot must retain discovery incompleteness and applicable failed-scope diagnostics and must not claim that unknown descendants are absent or that the Artifact set is complete.
+
+This rule applies when the containing directory is the supplied root as well as when it is nested. A root at which positive file discovery succeeded before descendant discovery failed is therefore not semantically identical to a root whose contents could not be enumerated sufficiently to establish any trustworthy supplied Artifact subset. The latter remains wholly Blocked without a Recovery Intake Snapshot.
+
+Successful enumeration that establishes zero direct files does not, by itself, justify an incomplete empty Recovery Intake Snapshot when subsequent descendant discovery fails. The zero-file result establishes only that no direct files were positively discovered by that completed operation; it does not establish the absence of files beneath undiscovered descendants. Unless other trustworthy Artifact state has been established, the intake remains Blocked rather than being represented as an incomplete empty admitted set.
+
+The resolution does not introduce directory Artifact identities, a filesystem graph, filesystem journal state, a transactional source-tree snapshot, hypothetical descendants, or absence claims for undiscovered contents. Internal traversal structures remain implementation details.
+
+`12-architecture.md`, `14-mvp.md`, and the Stage 01 summary in `00-ai-context.md` were synchronized with this refinement. `DEV-SPEC-002` remains unchanged as the historical implementation/verification record. The implementation correction requires a new bounded Development Slice rather than retroactive modification of DEV-SPEC-002.
+
+### Decision reference
+
+D171
+
+### Resolved in
+
+`07-recovery-process.md` §§3, 24–26; `12-architecture.md` §§17–18, 20; `14-mvp.md` §4; `00-ai-context.md` §9
+
+---
+
 
 
 # 21. Project-reconstruction qualifications

@@ -113,6 +113,10 @@ If the supplied root cannot be enumerated sufficiently to establish a trustworth
 
 If a narrower subtree cannot be enumerated while other files have been safely discovered, trustworthy discovered state may be retained where safe. The failed discovery scope is recorded as Blocked, the overall run may be Partial, and admitted artifacts continue through ordinary preservation. Any Recovery Intake Snapshot produced in this condition must explicitly record that supplied-source discovery was incomplete and the known failed scope or diagnostic context. Such a snapshot describes the artifact instances actually admitted; it does not claim that they are proven to be every file beneath the supplied directory tree.
 
+Positive file discovery is independently trustworthy once the applicable discovery operation has successfully and completely identified the concrete supplied file instance. A later failure while discovering possible child-directory or descendant scopes from the same known directory does not retroactively invalidate those positively discovered files merely because both operations occurred while processing one directory. The files remain eligible for Artifact admission/preservation, while the descendant-discovery failure makes the affected scope incomplete/Blocked and may make the overall run Partial. This applies at the supplied root as well as within a nested directory when a trustworthy supplied Artifact subset has already been positively established.
+
+A root with retained positive file discovery and failed descendant discovery is therefore distinct from a root that cannot be enumerated sufficiently to establish any trustworthy supplied Artifact set. Conversely, successful enumeration that establishes zero direct files does not by itself justify an incomplete empty Recovery Intake Snapshot when descendant discovery subsequently fails; without other trustworthy admitted Artifact state, the intake remains Blocked because possible descendant contents are still unknown.
+
 A file that was individually discovered and admitted but later becomes unreadable or fails byte preservation remains an Artifact-scoped preservation failure. That condition is distinct from inability to discover possible contents beneath an unenumerable source scope.
 
 ## Output
@@ -127,7 +131,7 @@ No project/source reconstruction occurs here.
 
 Stage 01 does not require a richer filesystem-object model merely to represent discovery failure. Directory/subtree scope and diagnostics are sufficient unless later governance establishes a broader capability.
 
-**Governance:** PROC-010 / D170.
+**Governance:** PROC-010 / D170; PROC-011 / D171.
 
 ---
 
@@ -713,6 +717,7 @@ This document owns only:
 | `PROC-008` | Recovery supports Partial, Blocked, Workable Baseline, and Validated Baseline states. |
 | `PROC-009` | Validation findings may trigger reevaluation, but Validation References remain outside Recovery Input. |
 | `PROC-010` | Stage 01 distinguishes supplied-source discovery from Artifact preservation; incomplete enumeration preserves safe known state without fabricating Artifacts or false completeness. |
+| `PROC-011` | Positive supplied-file discovery remains trustworthy when a later descendant-discovery operation for the same directory fails; the later failure narrows completeness rather than erasing established file state. |
 
 ---
 

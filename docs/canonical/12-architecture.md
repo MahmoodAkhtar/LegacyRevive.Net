@@ -624,7 +624,9 @@ Diagnostics must identify the affected capability/item or, where no Artifact ins
 
 An intake discovery diagnostic must not require or fabricate an Artifact identity for material that was never discovered. A narrower Blocked discovery scope may coexist with a Partial Recovery Run when unaffected discovered artifacts remain trustworthy.
 
-**Governance:** ARCH-010 / D114; PROC-010 / D170.
+When positive file discovery in a known directory has completed successfully, later failure to discover possible child-directory/descendant scopes from that same directory does not invalidate those discovered files. Diagnostics must describe the failed descendant-discovery boundary rather than retrospectively converting the positively discovered files into undiscovered state. At the supplied root, this partial-discovery condition must remain distinguishable from total root discovery failure where no trustworthy supplied Artifact subset was established.
+
+**Governance:** ARCH-010 / D114; PROC-010 / D170; PROC-011 / D171.
 
 ---
 
@@ -670,6 +672,7 @@ Persistence must be capable of representing:
 - provenance/support edges;
 - supersession/invalidations;
 - checkpoint state;
+- Stage 01 incomplete-discovery state that can distinguish retained positive file discovery plus a later descendant-discovery failure from total root discovery failure;
 - intervention journal;
 - reconstruction artifact metadata;
 - validation/metric history;
