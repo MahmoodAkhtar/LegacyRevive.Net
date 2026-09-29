@@ -89,20 +89,45 @@ Establish the recovery target and preserve supplied recovery inputs before analy
 
 The stage must:
 
-- identify the supplied artifact set;
+- discover the supplied recovery-input source sufficiently to identify supplied artifact instances;
+- identify the supplied artifact set to the extent actually established by that discovery;
 - preserve original artifacts without modification;
-- establish stable artifact identity inside the Recovery Workspace;
+- establish stable artifact identity inside the Recovery Workspace only for supplied files actually discovered and admitted as artifact instances;
 - record source/path/capture context where available;
 - distinguish Recovery Input from Validation Reference;
 - record Recovery Configuration separately from Evidence.
 
+Stage 01 distinguishes three responsibilities:
+
+```text
+supplied-source discovery
+        ↓
+Artifact admission
+        ↓
+artifact preservation
+```
+
+A failure in supplied-source discovery is not automatically an Artifact-preservation failure. Where a directory or subtree cannot be enumerated, LegacyRevive.NET must not fabricate Artifact identities or claims about files that were never discovered.
+
+If the supplied root cannot be enumerated sufficiently to establish a trustworthy supplied artifact set, the Stage 01 discovery scope is **Blocked**. A failed root enumeration must not be represented as a successfully identified empty artifact set, and no Recovery Intake Snapshot is produced as though complete discovery had succeeded. A Recovery Run and scoped discovery diagnostic may still be persisted where the workspace/run infrastructure has been established.
+
+If a narrower subtree cannot be enumerated while other files have been safely discovered, trustworthy discovered state may be retained where safe. The failed discovery scope is recorded as Blocked, the overall run may be Partial, and admitted artifacts continue through ordinary preservation. Any Recovery Intake Snapshot produced in this condition must explicitly record that supplied-source discovery was incomplete and the known failed scope or diagnostic context. Such a snapshot describes the artifact instances actually admitted; it does not claim that they are proven to be every file beneath the supplied directory tree.
+
+A file that was individually discovered and admitted but later becomes unreadable or fails byte preservation remains an Artifact-scoped preservation failure. That condition is distinct from inability to discover possible contents beneath an unenumerable source scope.
+
 ## Output
 
-A **Recovery Intake Snapshot** describing immutable recovery inputs and run context.
+A **Recovery Intake Snapshot** describing immutable admitted recovery inputs, discovery completeness, applicable discovery diagnostics/blockers, and run context when a trustworthy snapshot can be established.
+
+A completely enumerated empty directory may therefore produce a valid empty Recovery Intake Snapshot. An unenumerable root must not be treated as semantically equivalent to that known-empty condition.
 
 ## Boundary
 
 No project/source reconstruction occurs here.
+
+Stage 01 does not require a richer filesystem-object model merely to represent discovery failure. Directory/subtree scope and diagnostics are sufficient unless later governance establishes a broader capability.
+
+**Governance:** PROC-010 / D170.
 
 ---
 
@@ -573,47 +598,52 @@ Where nondeterminism cannot be avoided, it should be recorded sufficiently for d
 
 # 24. Partial Recovery
 
-Recovery may be useful even when later stages cannot complete.
+Recovery may be useful even when a stage, capability, scope, or later stage cannot complete.
 
 Examples:
 
+- Stage 01 safely discovers and preserves some supplied files while a narrower supplied subtree cannot be enumerated;
 - inventory succeeds but reconstruction does not;
 - structure is recovered but source is incomplete;
 - reconstruction exists but build fails;
 - build succeeds but behavioural validation is unavailable.
 
-Trustworthy completed work remains usable.
+Trustworthy completed work remains usable. Partial state must not hide the scope that remains incomplete or Blocked.
 
 ---
 
 # 25. Blocked Recovery
 
-A recovery question or stage is **Blocked** when progress requires unavailable information, intervention, or capability.
+A recovery question, stage, capability, or bounded scope is **Blocked** when progress requires unavailable information, intervention, access, or capability.
 
 Blocked state should identify:
 
 - what is blocked;
 - why;
-- missing dependency;
+- missing dependency/access/capability;
 - whether intervention could unblock it;
 - unaffected usable recovery state.
 
-Blocked does not prove that the original system is unrecoverable.
+A narrower Blocked scope may coexist with a Partial overall Recovery Run. For example, one supplied subtree may be Blocked during Stage 01 discovery while safely discovered sibling artifacts remain usable current state.
+
+Blocked does not prove that the original system is unrecoverable or that undiscovered material exists in any particular form.
 
 ---
 
 # 26. Failure handling
 
-Parser, tool, build, or validation failure must not automatically invalidate unrelated recovery state.
+Discovery, parser, tool, preservation, build, or validation failure must not automatically invalidate unrelated recovery state.
 
 Failures should be:
 
 - recorded;
-- scoped;
-- linked to affected stage/item;
+- scoped to the narrowest reliably established stage/capability/source/item boundary;
+- linked to an Artifact only when an Artifact instance actually exists;
 - propagated only where materially relevant.
 
-Prefer partial progress with explicit diagnostics over all-or-nothing failure.
+Where no Artifact identity exists because supplied-source discovery failed before a file was discovered/admitted, the diagnostic remains intake/source/directory/subtree scoped rather than fabricating an Artifact-scoped failure.
+
+Prefer partial progress with explicit diagnostics over all-or-nothing failure where trustworthy state can be retained. Do not preserve partial progress by overstating discovery completeness.
 
 ---
 
@@ -682,6 +712,7 @@ This document owns only:
 | `PROC-007` | Recovery distinguishes durable Recovery Workspace, individual Recovery Run, and Recovery Checkpoint. |
 | `PROC-008` | Recovery supports Partial, Blocked, Workable Baseline, and Validated Baseline states. |
 | `PROC-009` | Validation findings may trigger reevaluation, but Validation References remain outside Recovery Input. |
+| `PROC-010` | Stage 01 distinguishes supplied-source discovery from Artifact preservation; incomplete enumeration preserves safe known state without fabricating Artifacts or false completeness. |
 
 ---
 
@@ -700,7 +731,8 @@ This document owns only:
 11. Partial progress remains useful.
 12. Blocked state is explicit and scoped.
 13. Validation feedback is separated from Validation Reference leakage.
-14. A workable baseline does not imply exact reproduction or behavioural equivalence.
+14. Stage 01 discovery incompleteness remains explicit: root discovery failure cannot masquerade as a known-empty snapshot, while safe partial subtree progress may be retained without fabricating undiscovered Artifacts.
+15. A workable baseline does not imply exact reproduction or behavioural equivalence.
 
 ---
 
@@ -731,7 +763,8 @@ This document owns:
 - process-level intervention placement;
 - build-diagnostic feedback semantics;
 - Recovery Workspace / Recovery Run / Recovery Checkpoint;
-- partial/blocked/baseline process states.
+- partial/blocked/baseline process states;
+- Stage 01 supplied-source discovery, discovery-completeness, and discovery-failure semantics.
 
 `03`–`06` own the semantic models consumed by this process.
 

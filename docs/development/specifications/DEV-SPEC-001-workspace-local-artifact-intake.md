@@ -477,6 +477,8 @@ No currently open, in-review, blocked, deferred, or superseded qualification in 
 
 Implementation must create/register a new qualification before treating any newly exposed material ambiguity, contradiction, unsupported assumption, boundary issue, or challenge to canonical direction as settled.
 
+Post-implementation review on 2026-09-28 exposed `PROC-010 — Incomplete Supplied-Directory Enumeration During Intake`. The qualification was resolved through D170 and synchronized into the Stage 01, architecture, and MVP canonical owners. This historical specification is not retroactively rewritten to claim acceptance coverage it did not contain; the governed enumeration-failure behavior requires a follow-up Development Slice Specification.
+
 In particular, this DEV-SPEC deliberately does not settle incidental implementation details such as:
 
 - exact `.legacyrevive` subdirectory names;

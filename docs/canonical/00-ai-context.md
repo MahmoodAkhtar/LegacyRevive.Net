@@ -211,6 +211,7 @@ It establishes:
 - earliest-affected-stage reevaluation;
 - Recovery Workspace / Recovery Run / Recovery Checkpoint;
 - partial and blocked recovery states;
+- Stage 01 supplied-source discovery distinguished from Artifact preservation, including explicit incomplete-enumeration semantics;
 - build/validation feedback boundaries.
 
 The process coordinates `03`–`06` without changing their semantic categories.

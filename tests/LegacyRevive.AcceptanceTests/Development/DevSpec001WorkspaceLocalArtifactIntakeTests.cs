@@ -26,7 +26,7 @@ public sealed class DevSpec001WorkspaceLocalArtifactIntakeTests
 
         Assert.True(Directory.Exists(Path.Combine(workspace, ".legacyrevive")));
         Assert.Equal(2, session.State.Artifacts.Count);
-        Assert.Equal(2, session.State.IntakeSnapshot.ArtifactIds.Count);
+        Assert.Equal(2, session.State.IntakeSnapshot!.ArtifactIds.Count);
         Assert.All(session.State.Artifacts, artifact =>
         {
             Assert.Equal(ArtifactPreservationStatus.Preserved, artifact.PreservationStatus);
@@ -151,7 +151,7 @@ public sealed class DevSpec001WorkspaceLocalArtifactIntakeTests
         Assert.NotNull(reopenedSucceeded.PreservedByteReference);
         Assert.Equal("good"u8.ToArray(), await reopened.ReadPreservedArtifactAsync(reopenedSucceeded.Id, TestContext.Current.CancellationToken));
         Assert.Equal(RecoveryRunOutcome.Partial, reopened.State.Run.Outcome);
-        Assert.Equal(reopened.State.Run.Id, reopened.State.IntakeSnapshot.RecoveryRunId);
+        Assert.Equal(reopened.State.Run.Id, reopened.State.IntakeSnapshot!.RecoveryRunId);
         Assert.Equal(reopened.State.Run.Id, reopened.State.Checkpoint.RecoveryRunId);
         Assert.Equal(reopened.State.IntakeSnapshot.Id, reopened.State.Checkpoint.IntakeSnapshotId);
         Assert.Equal(reopened.State.Artifacts.Select(artifact => artifact.Id), reopened.State.IntakeSnapshot.ArtifactIds);
@@ -192,7 +192,7 @@ public sealed class DevSpec001WorkspaceLocalArtifactIntakeTests
 
         Assert.Equal(original.State.WorkspaceId, reopened.State.WorkspaceId);
         Assert.Equal(original.State.Run, reopened.State.Run);
-        Assert.Equal(original.State.IntakeSnapshot.Id, reopened.State.IntakeSnapshot.Id);
+        Assert.Equal(original.State.IntakeSnapshot!.Id, reopened.State.IntakeSnapshot!.Id);
         Assert.Equal(original.State.IntakeSnapshot.RecoveryRunId, reopened.State.IntakeSnapshot.RecoveryRunId);
         Assert.Equal(original.State.IntakeSnapshot.ArtifactIds, reopened.State.IntakeSnapshot.ArtifactIds);
         Assert.Equal(original.State.Checkpoint, reopened.State.Checkpoint);
@@ -202,12 +202,12 @@ public sealed class DevSpec001WorkspaceLocalArtifactIntakeTests
 
     private sealed class DeleteAfterEnumerationEnumerator(ISuppliedFileEnumerator inner, string failingRelativePath) : ISuppliedFileEnumerator
     {
-        public async Task<IReadOnlyList<SuppliedFile>> EnumerateAsync(string suppliedDirectory, CancellationToken cancellationToken = default)
+        public async Task<SuppliedFileDiscoveryResult> EnumerateAsync(string suppliedDirectory, CancellationToken cancellationToken = default)
         {
-            var files = await inner.EnumerateAsync(suppliedDirectory, cancellationToken);
-            var failingFile = files.Single(file => file.RelativePath == failingRelativePath);
+            var discovery = await inner.EnumerateAsync(suppliedDirectory, cancellationToken);
+            var failingFile = discovery.Files.Single(file => file.RelativePath == failingRelativePath);
             File.Delete(failingFile.SourcePath);
-            return files;
+            return discovery;
         }
     }
 }

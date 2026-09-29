@@ -589,7 +589,8 @@ A checkpoint should identify, directly or indirectly:
 - active assumptions;
 - active intervention records;
 - selected reconstruction candidates;
-- tool/configuration identity necessary for replay where applicable.
+- tool/configuration identity necessary for replay where applicable;
+- Stage 01 supplied-source discovery completeness and scoped discovery diagnostics/blockers where the checkpoint depends on an intake snapshot produced from incomplete discovery.
 
 A later checkpoint does not rewrite an earlier one.
 
@@ -605,6 +606,7 @@ Errors are stage/capability outcomes, not necessarily whole-run failures.
 
 The architecture must support structured diagnostics for:
 
+- supplied-source/root/directory/subtree discovery or enumeration failure;
 - unsupported artifact;
 - unreadable/corrupt artifact;
 - analyzer failure;
@@ -618,9 +620,11 @@ The architecture must support structured diagnostics for:
 
 A Recovery Run may continue where safe and produce Partial/Blocked/Workable states already defined by the Recovery Process.
 
-Diagnostics must identify the affected capability/item and preserve enough context for developer action.
+Diagnostics must identify the affected capability/item or, where no Artifact instance exists, the narrowest reliably established source/directory/subtree scope, and preserve enough context for developer action.
 
-**Governance:** ARCH-010 / D114.
+An intake discovery diagnostic must not require or fabricate an Artifact identity for material that was never discovered. A narrower Blocked discovery scope may coexist with a Partial Recovery Run when unaffected discovered artifacts remain trustworthy.
+
+**Governance:** ARCH-010 / D114; PROC-010 / D170.
 
 ---
 
@@ -668,7 +672,10 @@ Persistence must be capable of representing:
 - checkpoint state;
 - intervention journal;
 - reconstruction artifact metadata;
-- validation/metric history.
+- validation/metric history;
+- Stage 01 supplied-source discovery completeness and discovery-failure scope/diagnostics when applicable to a persisted intake snapshot or blocked intake run.
+
+Persistence must distinguish a successfully enumerated empty supplied tree from a supplied root whose contents could not be enumerated.
 
 Physical implementations may use files, embedded databases, relational stores, graph-oriented representations, or combinations if they preserve the canonical semantics.
 

@@ -23,7 +23,7 @@ public sealed class ArtifactIntakeServiceTests
 
         Assert.Equal(["a.bin", "z.bin"], session.State.Artifacts.Select(item => item.Provenance.RelativePath));
         Assert.Same(session.State, repository.Saved);
-        Assert.Equal(session.State.Artifacts.Select(item => item.Id), session.State.IntakeSnapshot.ArtifactIds);
+        Assert.Equal(session.State.Artifacts.Select(item => item.Id), session.State.IntakeSnapshot!.ArtifactIds);
         Assert.Equal(session.State.Run.Id, session.State.Checkpoint.RecoveryRunId);
         Assert.Equal(session.State.IntakeSnapshot.Id, session.State.Checkpoint.IntakeSnapshotId);
     }
@@ -60,8 +60,8 @@ public sealed class ArtifactIntakeServiceTests
         Assert.Equal(firstSubstance, secondSubstance);
         Assert.Equal(["a.bin", "middle.bin", "nested/z.bin"], firstSubstance.Select(item => item.RelativePath));
         Assert.Equal(
-            first.State.IntakeSnapshot.ArtifactIds.Select(id => first.State.GetArtifact(id).Provenance.RelativePath),
-            second.State.IntakeSnapshot.ArtifactIds.Select(id => second.State.GetArtifact(id).Provenance.RelativePath));
+            first.State.IntakeSnapshot!.ArtifactIds.Select(id => first.State.GetArtifact(id).Provenance.RelativePath),
+            second.State.IntakeSnapshot!.ArtifactIds.Select(id => second.State.GetArtifact(id).Provenance.RelativePath));
         Assert.Empty(first.State.Artifacts.Select(artifact => artifact.Id).Intersect(second.State.Artifacts.Select(artifact => artifact.Id)));
         Assert.Equal(first.State.Run.Outcome, second.State.Run.Outcome);
         Assert.Equal(first.State.Run.ToolIdentity, second.State.Run.ToolIdentity);
@@ -135,6 +135,91 @@ public sealed class ArtifactIntakeServiceTests
         Assert.Equal(Path.GetFullPath("source"), session.State.Artifacts.Single().Provenance.CaptureContext);
     }
 
+    [Fact]
+    public async Task RootDiscoveryFailurePersistsBlockedRunWithoutSnapshotOrArtifacts()
+    {
+        var repository = new RecordingRepository();
+        var discovery = SuppliedFileDiscoveryResult.Incomplete(
+            [],
+            [new IntakeDiscoveryDiagnostic(
+                "INTAKE_DISCOVERY_FAILED",
+                "Injected root failure.",
+                IntakeDiscoveryScope.SuppliedSource())]);
+        var service = new ArtifactIntakeService(
+            new MemoryBoundary(),
+            new ResultEnumerator(discovery),
+            new MemoryArtifactStore(),
+            repository);
+
+        var session = await service.CreateAndIntakeAsync(new IntakeRequest("source"), TestContext.Current.CancellationToken);
+
+        Assert.Equal(RecoveryRunOutcome.Blocked, session.State.Run.Outcome);
+        Assert.Null(session.State.IntakeSnapshot);
+        Assert.Null(session.State.Checkpoint.IntakeSnapshotId);
+        Assert.Empty(session.State.Artifacts);
+        Assert.Equal(IntakeDiscoveryScopeKind.SuppliedSource, Assert.Single(session.State.DiscoveryDiagnostics).Scope.Kind);
+        Assert.Same(session.State, repository.Saved);
+    }
+
+    [Fact]
+    public async Task IncompleteSubtreeDiscoveryCreatesPartialSnapshotWithNonArtifactDiagnostic()
+    {
+        var discovery = SuppliedFileDiscoveryResult.Incomplete(
+            [new SuppliedFile("safe.bin", "safe")],
+            [new IntakeDiscoveryDiagnostic(
+                "INTAKE_DISCOVERY_FAILED",
+                "Injected subtree failure.",
+                IntakeDiscoveryScope.DirectorySubtree("blocked"))]);
+        var service = new ArtifactIntakeService(
+            new MemoryBoundary(),
+            new ResultEnumerator(discovery),
+            new MemoryArtifactStore(),
+            new RecordingRepository());
+
+        var session = await service.CreateAndIntakeAsync(new IntakeRequest("source", "capture"), TestContext.Current.CancellationToken);
+
+        Assert.Equal(RecoveryRunOutcome.Partial, session.State.Run.Outcome);
+        Assert.Equal(SuppliedSourceDiscoveryCompleteness.Incomplete, session.State.IntakeSnapshot!.DiscoveryCompleteness);
+        Assert.Equal("safe.bin", Assert.Single(session.State.Artifacts).Provenance.RelativePath);
+        Assert.Equal("blocked", Assert.Single(session.State.DiscoveryDiagnostics).Scope.RelativePath);
+    }
+
+    [Fact]
+    public async Task CheckpointSubstanceIncludesDiscoveryCompletenessAndDiagnostics()
+    {
+        var complete = await CreateService(new RecordingRepository(), new MemoryArtifactStore(), new SuppliedFile("safe.bin", "safe"))
+            .CreateAndIntakeAsync(new IntakeRequest("source", "capture", "tool", "config"), TestContext.Current.CancellationToken);
+        var incompleteDiscovery = SuppliedFileDiscoveryResult.Incomplete(
+            [new SuppliedFile("safe.bin", "safe")],
+            [new IntakeDiscoveryDiagnostic(
+                "INTAKE_DISCOVERY_FAILED",
+                "Injected subtree failure.",
+                IntakeDiscoveryScope.DirectorySubtree("blocked"))]);
+        var incomplete = await new ArtifactIntakeService(
+                new MemoryBoundary(),
+                new ResultEnumerator(incompleteDiscovery),
+                new MemoryArtifactStore(),
+                new RecordingRepository())
+            .CreateAndIntakeAsync(new IntakeRequest("source", "capture", "tool", "config"), TestContext.Current.CancellationToken);
+
+        Assert.NotEqual(complete.State.Checkpoint.SubstanceHash, incomplete.State.Checkpoint.SubstanceHash);
+    }
+
+    [Fact]
+    public async Task DiscoveryCancellationPropagatesWithoutCreatingWorkspaceState()
+    {
+        var calls = new List<string>();
+        var service = new ArtifactIntakeService(
+            new RecordingBoundary(calls),
+            new CancelingEnumerator(),
+            new MemoryArtifactStore(),
+            new RecordingRepository());
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            service.CreateAndIntakeAsync(new IntakeRequest("source"), TestContext.Current.CancellationToken));
+        Assert.Empty(calls);
+    }
+
     private static ArtifactIntakeService CreateService(
         RecordingRepository repository,
         MemoryArtifactStore store,
@@ -164,17 +249,29 @@ public sealed class ArtifactIntakeServiceTests
 
     private sealed class RecordingEnumerator(List<string> calls) : ISuppliedFileEnumerator
     {
-        public Task<IReadOnlyList<SuppliedFile>> EnumerateAsync(string suppliedDirectory, CancellationToken cancellationToken = default)
+        public Task<SuppliedFileDiscoveryResult> EnumerateAsync(string suppliedDirectory, CancellationToken cancellationToken = default)
         {
             calls.Add("enumerate");
-            return Task.FromResult<IReadOnlyList<SuppliedFile>>([new SuppliedFile("one.bin", "one")]);
+            return Task.FromResult(SuppliedFileDiscoveryResult.Complete([new SuppliedFile("one.bin", "one")]));
         }
     }
 
     private sealed class FixedEnumerator(IReadOnlyList<SuppliedFile> files) : ISuppliedFileEnumerator
     {
-        public Task<IReadOnlyList<SuppliedFile>> EnumerateAsync(string suppliedDirectory, CancellationToken cancellationToken = default) =>
-            Task.FromResult(files);
+        public Task<SuppliedFileDiscoveryResult> EnumerateAsync(string suppliedDirectory, CancellationToken cancellationToken = default) =>
+            Task.FromResult(SuppliedFileDiscoveryResult.Complete(files));
+    }
+
+    private sealed class ResultEnumerator(SuppliedFileDiscoveryResult result) : ISuppliedFileEnumerator
+    {
+        public Task<SuppliedFileDiscoveryResult> EnumerateAsync(string suppliedDirectory, CancellationToken cancellationToken = default) =>
+            Task.FromResult(result);
+    }
+
+    private sealed class CancelingEnumerator : ISuppliedFileEnumerator
+    {
+        public Task<SuppliedFileDiscoveryResult> EnumerateAsync(string suppliedDirectory, CancellationToken cancellationToken = default) =>
+            Task.FromException<SuppliedFileDiscoveryResult>(new OperationCanceledException(cancellationToken));
     }
 
     private sealed class MemoryArtifactStore(string? failingPath = null) : IOriginalArtifactStore

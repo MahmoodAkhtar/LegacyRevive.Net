@@ -288,6 +288,7 @@ Related qualifications: <IDs or None>
 | D167 | MVP Original Artifacts Use Workspace-Owned Immutable Byte Snapshots | Accepted |
 | D168 | Material Implementation Uses Canonical Development Process and Development Slice Specifications | Accepted |
 | D169 | LegacyRevive.NET Repository Solution Is `LegacyRevive.Net.slnx` | Accepted |
+| D170 | Intake Discovery Failure Preserves Known State Without Fabricating Artifacts | Accepted |
 
 ---
 
@@ -5459,6 +5460,56 @@ The rename does not challenge the substantive SLNX format choice established by 
 ### Supersedes
 
 D162
+
+### Superseded by
+
+None
+
+---
+
+## D170 — Intake Discovery Failure Preserves Known State Without Fabricating Artifacts
+
+Status: Accepted  
+Date: 2026-09-28  
+Origin: `91-design-qualification-register.md`; PROC-010 governance resolution  
+Related qualifications: PROC-010
+
+### Decision
+
+Stage 01 distinguishes supplied-source discovery from preservation of an already discovered Artifact.
+
+LegacyRevive.NET creates an Artifact identity only for a supplied file that has actually been discovered and admitted as an artifact instance. Failure to enumerate a supplied directory or subtree must not fabricate Artifact identities or file-existence claims for contents that were never discovered.
+
+When the supplied root cannot be enumerated sufficiently to identify a trustworthy supplied artifact set, the Stage 01 discovery scope is Blocked and no Recovery Intake Snapshot is produced as though the source had been successfully enumerated. A failed root enumeration must not be represented as a successfully identified empty artifact set. A Recovery Run and scoped discovery diagnostic may still be persisted where the workspace/run infrastructure has been established.
+
+When a narrower subtree cannot be enumerated but other files have been safely discovered, LegacyRevive.NET retains the trustworthy discovered state where safe. The affected discovery scope is represented as Blocked through a structured intake/discovery diagnostic, while the overall Recovery Run may be Partial.
+
+A Recovery Intake Snapshot produced from incomplete directory discovery represents the artifact instances actually admitted to that snapshot and must explicitly retain that supplied-source discovery was incomplete together with the applicable failed scope/diagnostic context. It must not imply that the admitted Artifact set is proven to be the complete contents of the supplied directory tree.
+
+A file that was individually discovered and admitted but later becomes unreadable or fails byte preservation remains an Artifact-scoped preservation failure under the ordinary preservation model. That condition is distinct from inability to discover possible material beneath an unenumerable source scope.
+
+### Rationale
+
+LegacyRevive.NET must preserve safe partial recovery without converting missing discovery information into invented artifacts or false completeness.
+
+The distinction applies the established Partial/Blocked and scoped-diagnostic model to Stage 01 while preserving provenance, replayability, and the epistemic boundary between what was actually discovered and what remains unknown. It also prevents a root-enumeration failure from becoming observationally equivalent to a successfully enumerated empty supplied set.
+
+### Consequences
+
+- supplied-source discovery requires structured diagnostics independent of Artifact identity;
+- Stage 01 state must record whether supplied-directory discovery completed whenever a Recovery Intake Snapshot is produced;
+- failed root enumeration cannot masquerade as a successful empty intake;
+- safe sibling/subtree progress may be retained when another subtree fails;
+- incomplete Recovery Intake Snapshots expose their discovery incompleteness persistently and replayably;
+- no Artifact identity is generated for undiscovered possible content;
+- already-discovered files continue through the existing Artifact admission/preservation model;
+- diagnostics use the narrowest reliably established source/directory/subtree scope when no Artifact exists;
+- MVP implementation must cover root and subtree discovery failure without requiring a richer filesystem-capture ontology;
+- D134's requirement to inventory every supplied file is interpreted at the discovery boundary as every supplied file actually discovered by intake; inability to enumerate possible additional contents remains explicit rather than being treated as either inventory success or historical absence.
+
+### Supersedes
+
+None
 
 ### Superseded by
 

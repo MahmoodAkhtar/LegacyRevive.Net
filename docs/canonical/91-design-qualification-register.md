@@ -581,6 +581,7 @@ The governance update is not complete until these checks agree.
 | PROC-007 | Workspace Run Checkpoint Model | Resolved | Question | `07-recovery-process.md` |
 | PROC-008 | Partial Blocked and Baseline States | Resolved | Question | `07-recovery-process.md` |
 | PROC-009 | Validation Feedback Boundary | Resolved | Boundary Issue | `07-recovery-process.md` |
+| PROC-010 | Incomplete Supplied-Directory Enumeration During Intake | Resolved | Boundary Issue | `07-recovery-process.md` |
 | PROJ-001 | Candidate Project vs Original Project | Resolved | Boundary Issue | `08-project-reconstruction.md` |
 | PROJ-002 | Assembly Boundary as Project Candidate Anchor | Resolved | Question | `08-project-reconstruction.md` |
 | PROJ-003 | Project Boundary Support and Conflict | Resolved | Question | `08-project-reconstruction.md` |
@@ -3241,6 +3242,83 @@ D062
 ### Resolved in
 
 `07-recovery-process.md` §§11, 30
+
+---
+
+## PROC-010 — Incomplete Supplied-Directory Enumeration During Intake
+
+Status: Resolved  
+Type: Boundary Issue  
+Origin: Post-implementation review of `DEV-SPEC-001 — Workspace + Local Artifact Intake`  
+Owner document: `07-recovery-process.md`  
+Depends on: D003, D049, D054, D060, D061, D113, D114, D134, D141, D167, D168  
+Blocks: Follow-up Stage 01 intake-enumeration Development Slice until resolution
+
+### Qualification
+
+What canonical Stage 01 state must LegacyRevive.NET establish when a supplied local directory tree cannot be completely enumerated, including root-enumeration failure, narrower subtree-enumeration failure, files safely discovered before a later enumeration failure, and the distinction between undiscovered possible contents and an individually discovered file that later fails preservation?
+
+In particular, when is a Recovery Intake Snapshot valid, what does such a snapshot claim about completeness of the supplied artifact set, what state is Partial versus Blocked, and what diagnostic scope applies where no Artifact identity exists?
+
+### Why it matters
+
+Stage 01 is required to identify the supplied artifact set and produce a Recovery Intake Snapshot. Existing canonical rules also require scoped diagnostics, preservation of safe partial progress, persistent/replayable state, and explicit Blocked/Partial conditions.
+
+An enumeration failure can occur before an Artifact identity exists for affected material. Treating that failure as an ordinary Artifact-preservation failure would fabricate an artifact-level scope, while silently treating a partially traversed tree as complete could overstate what intake established. The semantics affect Stage 01 correctness, provenance, replay, diagnostics, MVP local-input behavior, and implementation acceptance.
+
+### Current understanding
+
+Before resolution, the canonical model already established that:
+
+- Stage 01 must identify the supplied artifact set before downstream recovery;
+- Recovery Intake Snapshot describes immutable recovery inputs and run context;
+- recovery is not universally all-or-nothing;
+- safe partial progress and explicit Blocked state are canonical;
+- diagnostics should be scoped to the affected capability/item;
+- every discovered MVP file is inventoried;
+- artifact absence does not establish historical nonexistence;
+- Artifact identities apply to admitted artifact instances;
+- failed preservation of an already admitted Artifact is distinct from inability to discover possible contents of an unenumerable directory scope.
+
+The canonical documents did not previously state whether incomplete directory enumeration could produce a Recovery Intake Snapshot, how snapshot completeness was represented, or how root-enumeration failure differed from local subtree-enumeration failure.
+
+### Resolution criteria
+
+Resolution required explicit answers for:
+
+1. whether workspace/run state and discovery diagnostics may exist when discovery fails;
+2. whether root-enumeration failure may create a Recovery Intake Snapshot;
+3. whether safely discovered files may be retained when a narrower subtree cannot be enumerated;
+4. how incomplete enumeration is represented as Partial and/or Blocked;
+5. the minimum diagnostic scope where no Artifact exists;
+6. whether a Recovery Intake Snapshot records discovery completeness;
+7. the distinction between undiscovered possible content and an admitted Artifact that later fails preservation;
+8. replay/persistence requirements;
+9. the MVP and implementation-development consequences.
+
+### Resolution
+
+Stage 01 now canonically distinguishes supplied-source discovery, Artifact admission, and Artifact preservation.
+
+Artifact identity is created only for a file actually discovered and admitted. Enumeration failure never creates placeholder Artifacts or claims about undiscovered file existence.
+
+If the supplied root cannot be enumerated sufficiently to establish a trustworthy supplied artifact set, the discovery scope is Blocked and no Recovery Intake Snapshot is produced as though enumeration succeeded; specifically, failure to enumerate the root is not equivalent to successfully enumerating an empty directory. Workspace/run state and a root-scoped discovery diagnostic may be persisted where infrastructure has already been established.
+
+If a narrower subtree fails while other files have been safely discovered, trustworthy discovered state may be retained. The failed subtree/source scope is Blocked, the overall Recovery Run may be Partial, and admitted files proceed through normal preservation. Any Recovery Intake Snapshot produced in this condition records discovery incompleteness and the applicable failed scope/diagnostic context; it represents admitted artifacts rather than claiming complete knowledge of all files beneath the supplied tree.
+
+A file that was individually discovered/admitted and later becomes unreadable or fails byte preservation remains an Artifact-scoped preservation failure. Where discovery failed before an Artifact existed, the diagnostic remains intake/source/directory/subtree scoped.
+
+The MVP is not expanded into a full filesystem graph or transactional filesystem snapshot model. It must preserve source/root identity, safely discovered files, discovery-completeness state, known failed discovery scopes/diagnostics, and existing Artifact preservation state.
+
+`12-architecture.md` and `14-mvp.md` were synchronized with these semantics. `DEV-SPEC-001` remains the historical record of its implemented acceptance baseline; the newly governed enumeration-failure behavior requires a follow-up Development Slice rather than retroactive rewriting of that baseline.
+
+### Decision reference
+
+D170
+
+### Resolved in
+
+`07-recovery-process.md` §§3, 24–26; `12-architecture.md` §§17–18, 20; `14-mvp.md` §4
 
 ---
 

@@ -27,16 +27,16 @@ public sealed class ArtifactIntakeService(
 
         // Capture the supplied set before creating internal workspace files. This also keeps
         // a developer-selected source/workspace root from admitting .legacyrevive itself.
-        var suppliedFiles = await suppliedFileEnumerator.EnumerateAsync(request.SuppliedDirectory, cancellationToken);
+        var discovery = await suppliedFileEnumerator.EnumerateAsync(request.SuppliedDirectory, cancellationToken);
         await workspaceBoundary.CreateAsync(cancellationToken);
         var workspaceId = WorkspaceId.Create();
         await stateRepository.InitializeAsync(workspaceId, cancellationToken);
 
         var runId = RecoveryRunId.Create();
         var captureContext = request.CaptureContext ?? Path.GetFullPath(request.SuppliedDirectory);
-        var artifacts = new List<OriginalArtifact>(suppliedFiles.Count);
+        var artifacts = new List<OriginalArtifact>(discovery.Files.Count);
 
-        foreach (var suppliedFile in suppliedFiles.OrderBy(file => file.RelativePath, StringComparer.Ordinal))
+        foreach (var suppliedFile in discovery.Files.OrderBy(file => file.RelativePath, StringComparer.Ordinal))
         {
             cancellationToken.ThrowIfCancellationRequested();
             var artifact = OriginalArtifact.Pending(
@@ -68,20 +68,32 @@ public sealed class ArtifactIntakeService(
                     result.ContentHash));
         }
 
-        var run = new RecoveryRun(
-            runId,
-            artifacts.Any(artifact => artifact.PreservationStatus == ArtifactPreservationStatus.Failed)
+        var outcome = discovery.IsRootBlocked
+            ? RecoveryRunOutcome.Blocked
+            : discovery.Completeness == SuppliedSourceDiscoveryCompleteness.Incomplete ||
+              artifacts.Any(artifact => artifact.PreservationStatus == ArtifactPreservationStatus.Failed)
                 ? RecoveryRunOutcome.Partial
-                : RecoveryRunOutcome.Completed,
-            request.ToolIdentity,
-            request.ConfigurationIdentity);
-        var snapshot = new RecoveryIntakeSnapshot(IntakeSnapshotId.Create(), runId, artifacts.Select(artifact => artifact.Id).ToArray());
+                : RecoveryRunOutcome.Completed;
+        var run = new RecoveryRun(runId, outcome, request.ToolIdentity, request.ConfigurationIdentity);
+        var diagnostics = discovery.Diagnostics
+            .OrderBy(diagnostic => diagnostic.Scope.Kind)
+            .ThenBy(diagnostic => diagnostic.Scope.RelativePath, StringComparer.Ordinal)
+            .ThenBy(diagnostic => diagnostic.Code, StringComparer.Ordinal)
+            .ThenBy(diagnostic => diagnostic.Message, StringComparer.Ordinal)
+            .ToArray();
+        var snapshot = discovery.IsRootBlocked
+            ? null
+            : new RecoveryIntakeSnapshot(
+                IntakeSnapshotId.Create(),
+                runId,
+                artifacts.Select(artifact => artifact.Id).ToArray(),
+                discovery.Completeness);
         var checkpoint = new RecoveryCheckpoint(
             RecoveryCheckpointId.Create(),
             runId,
-            snapshot.Id,
-            ComputeSubstanceHash(run, artifacts));
-        var state = new RecoveryWorkspaceState(workspaceId, run, snapshot, checkpoint, artifacts);
+            snapshot?.Id,
+            ComputeSubstanceHash(run, snapshot, diagnostics, artifacts));
+        var state = new RecoveryWorkspaceState(workspaceId, run, snapshot, checkpoint, artifacts, diagnostics);
 
         await stateRepository.SaveAsync(state, cancellationToken);
         return new RecoveryWorkspaceSession(state, artifactStore);
@@ -93,19 +105,35 @@ public sealed class ArtifactIntakeService(
         return new RecoveryWorkspaceSession(await stateRepository.LoadCurrentAsync(cancellationToken), artifactStore);
     }
 
-    private static string ComputeSubstanceHash(RecoveryRun run, IEnumerable<OriginalArtifact> artifacts)
+    private static string ComputeSubstanceHash(
+        RecoveryRun run,
+        RecoveryIntakeSnapshot? snapshot,
+        IEnumerable<IntakeDiscoveryDiagnostic> discoveryDiagnostics,
+        IEnumerable<OriginalArtifact> artifacts)
     {
         var builder = new StringBuilder();
         builder.Append(run.ToolIdentity).Append('\n').Append(run.ConfigurationIdentity).Append('\n').Append(run.Outcome).Append('\n');
+        builder.Append(snapshot is null ? "NO_SNAPSHOT" : snapshot.DiscoveryCompleteness).Append('\n');
+        foreach (var diagnostic in discoveryDiagnostics
+                     .OrderBy(item => item.Scope.Kind)
+                     .ThenBy(item => item.Scope.RelativePath, StringComparer.Ordinal)
+                     .ThenBy(item => item.Code, StringComparer.Ordinal)
+                     .ThenBy(item => item.Message, StringComparer.Ordinal))
+        {
+            builder
+                .Append(diagnostic.Scope.Kind).Append('|')
+                .Append(diagnostic.Scope.RelativePath).Append('|')
+                .Append(diagnostic.Code).Append('|')
+                .Append(diagnostic.Message).Append('\n');
+        }
+
         foreach (var artifact in artifacts.OrderBy(item => item.Provenance.RelativePath, StringComparer.Ordinal))
         {
             builder
-                .Append(artifact.Id.Value.ToString("D")).Append('|')
                 .Append(artifact.Provenance.RelativePath).Append('|')
                 .Append(artifact.Provenance.CaptureContext).Append('|')
                 .Append(artifact.ContentHash?.Value).Append('|')
                 .Append(artifact.PreservationStatus).Append('|')
-                .Append(artifact.PreservedByteReference).Append('|')
                 .Append(artifact.Diagnostic?.Code).Append('|')
                 .Append(artifact.Diagnostic?.Message).Append('\n');
         }

@@ -6,6 +6,47 @@ namespace LegacyRevive.Application.Intake;
 
 public sealed record SuppliedFile(string RelativePath, string SourcePath);
 
+public sealed record SuppliedFileDiscoveryResult
+{
+    public SuppliedFileDiscoveryResult(
+        IReadOnlyList<SuppliedFile> files,
+        SuppliedSourceDiscoveryCompleteness completeness,
+        IReadOnlyList<IntakeDiscoveryDiagnostic>? diagnostics = null)
+    {
+        Files = files ?? throw new ArgumentNullException(nameof(files));
+        Completeness = completeness;
+        Diagnostics = diagnostics ?? [];
+
+        if (completeness == SuppliedSourceDiscoveryCompleteness.Complete && Diagnostics.Count != 0)
+        {
+            throw new ArgumentException("Complete discovery cannot contain discovery-failure diagnostics.", nameof(diagnostics));
+        }
+
+        if (completeness == SuppliedSourceDiscoveryCompleteness.Incomplete && Diagnostics.Count == 0)
+        {
+            throw new ArgumentException("Incomplete discovery requires at least one scoped diagnostic.", nameof(diagnostics));
+        }
+
+        if (IsRootBlocked && Files.Count != 0)
+        {
+            throw new ArgumentException("Root-blocked discovery cannot establish an admitted supplied-file set.", nameof(files));
+        }
+    }
+
+    public IReadOnlyList<SuppliedFile> Files { get; }
+    public SuppliedSourceDiscoveryCompleteness Completeness { get; }
+    public IReadOnlyList<IntakeDiscoveryDiagnostic> Diagnostics { get; }
+    public bool IsRootBlocked => Diagnostics.Any(diagnostic => diagnostic.Scope.Kind == IntakeDiscoveryScopeKind.SuppliedSource);
+
+    public static SuppliedFileDiscoveryResult Complete(IReadOnlyList<SuppliedFile> files) =>
+        new(files, SuppliedSourceDiscoveryCompleteness.Complete);
+
+    public static SuppliedFileDiscoveryResult Incomplete(
+        IReadOnlyList<SuppliedFile> files,
+        IReadOnlyList<IntakeDiscoveryDiagnostic> diagnostics) =>
+        new(files, SuppliedSourceDiscoveryCompleteness.Incomplete, diagnostics);
+}
+
 public sealed record ArtifactPreservationResult
 {
     private ArtifactPreservationResult(
@@ -42,7 +83,7 @@ public interface IWorkspaceBoundary
 
 public interface ISuppliedFileEnumerator
 {
-    Task<IReadOnlyList<SuppliedFile>> EnumerateAsync(string suppliedDirectory, CancellationToken cancellationToken = default);
+    Task<SuppliedFileDiscoveryResult> EnumerateAsync(string suppliedDirectory, CancellationToken cancellationToken = default);
 }
 
 public interface IOriginalArtifactStore

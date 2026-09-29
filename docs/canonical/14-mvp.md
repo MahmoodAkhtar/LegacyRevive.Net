@@ -56,7 +56,7 @@ The minimum end-to-end journey is:
 
 1. point LegacyRevive.NET at a local artifact directory;
 2. create a recovery workspace;
-3. inventory and hash all supplied files;
+3. inventory and hash all discovered supplied files, with any discovery incompleteness kept explicit;
 4. identify and analyze supported managed artifacts and companion files;
 5. build the evidence/provenance model;
 6. classify/correlate assemblies and dependencies;
@@ -104,7 +104,17 @@ Cross-platform execution is deferred to the roadmap; the Domain/Core must not in
 
 The MVP accepts a **local directory tree** as its primary Recovery Input source.
 
-Every discovered file is inventoried even if no dedicated analyzer exists.
+Every discovered file is inventoried even if no dedicated analyzer exists. "Discovered" is literal: failure to enumerate a root or subtree must not be converted into invented file instances or a claim that undiscovered contents are absent.
+
+The MVP must preserve the Stage 01 discovery-completeness semantics defined by `07-recovery-process.md`:
+
+- a completely enumerable empty directory is a known empty supplied set and may produce a valid empty Recovery Intake Snapshot;
+- a supplied root that cannot be enumerated sufficiently to establish a trustworthy supplied set is Blocked and must not be represented as a successful empty intake;
+- when a narrower subtree cannot be enumerated but other files are safely discovered, the trustworthy discovered files may be retained, the failed discovery scope remains explicit/Blocked, and the run may be Partial;
+- no Artifact identity is created for possible files that were never discovered;
+- a file discovered before later read/preservation failure follows the ordinary Artifact-scoped preservation-failure model.
+
+The MVP does not require a full filesystem graph, directory-as-Artifact model, filesystem journal capture, or transactional point-in-time directory snapshot to satisfy these semantics.
 
 ## 4.1 Required MVP analyzers
 
@@ -158,7 +168,7 @@ The MVP does not promise semantic reconstruction of:
 
 Such material may still be inventoried and preserved.
 
-**Governance:** MVP-003 / D134.
+**Governance:** MVP-003 / D134; PROC-010 / D170.
 
 ---
 
@@ -701,7 +711,7 @@ It must prove that the recovery model can produce a trustworthy, inspectable, pr
 1. MVP scope is managed-.NET recovery first;
 2. execution is Windows x64 first;
 3. local/offline recovery is the default;
-4. all supplied files are inventoried even when unsupported;
+4. all discovered supplied files are inventoried even when unsupported, while discovery failures remain explicit;
 5. managed metadata extraction is direct and non-executing;
 6. one assembly is not automatically one original project;
 7. dependency existence and historical representation remain separate;
