@@ -4,12 +4,18 @@
 
 **Canonical**
 
-DEV-001 has completed the governed lifecycle and is Resolved. D168 establishes the durable development-process direction owned by this document.
+DEV-001 through DEV-004 have completed the governed lifecycle and are Resolved. D168 establishes the canonical development-process framework, D173 establishes the semantic-readiness gate for implementation delegation, D174 establishes history-preserving rejection of an unsound Implemented completion judgment, and D176 establishes boundary/falsification verification for material recognition/classification slices.
 
 This document is governed by:
 
 - DEV-001 — Canonical Development Process and Development Slice Specifications;
-- D168 — Material Implementation Uses Canonical Development Process and Development Slice Specifications.
+- DEV-002 — Semantic Readiness of a Development Slice;
+- DEV-003 — Post-Implemented Rejection of a Development Slice;
+- DEV-004 — Recognition Boundary and Falsification Verification;
+- D168 — Material Implementation Uses Canonical Development Process and Development Slice Specifications;
+- D173 — Development Slices Require Semantic Readiness Before Implementation;
+- D174 — Rejected DEV-SPECs Preserve Unsound Implemented Completion Judgments;
+- D176 — Recognition/Classifiers Require Boundary-Falsification Verification.
 
 ---
 
@@ -257,7 +263,8 @@ Allowed values are:
 - `Verification Pending`;
 - `Implemented`;
 - `Withdrawn`;
-- `Superseded`.
+- `Superseded`;
+- `Rejected`.
 
 ## 8.2 Blocked by
 
@@ -287,7 +294,7 @@ Blocked by: DEV-002
 
 These fields record durable replacement relationships between Development Slice Specifications.
 
-They remain distinct from blocking and ordinary lifecycle progression.
+They remain distinct from blocking and ordinary lifecycle progression. A later replacement may link to a `Rejected` specification for historical lineage, but that does not change the rejected specification's current lifecycle status to `Superseded`; rejection records that its own completion judgment was not accepted as valid.
 
 ---
 
@@ -314,6 +321,8 @@ Superseded by:
 ### Excluded
 
 ## Acceptance contract
+
+## Readiness assessment
 
 ## Representative scenarios
 
@@ -441,6 +450,60 @@ Acceptance propositions do not create new canonical product semantics. They oper
 
 ---
 
+# 12A. Semantic readiness
+
+A Development Slice Specification may enter `Ready for Implementation` only when its acceptance-bearing obligations are **semantically determinate enough to delegate to implementation**.
+
+Semantic readiness means the applicable canonical basis, together with the bounded DEV-SPEC, determines the materially significant meaning of the behavior being implemented. The implementer may still choose implementation mechanics, but must not have to invent product/design semantics in order to decide what counts as a correct result.
+
+The readiness review applies the following **material semantic choice test**:
+
+> **Could two implementations make materially different semantic choices and both plausibly claim that the current canonical basis and acceptance wording permit them?**
+
+If the answer is yes because the authoritative semantics do not determine the choice, the slice is not semantically ready. The missing semantic question must be routed through `91-design-qualification-register.md` and resolved by the appropriate canonical owner before the slice proceeds.
+
+Material semantic choices include, where relevant to the slice:
+
+- truth conditions for a classification, state, or accepted outcome;
+- evidence or recognition thresholds;
+- state meanings and transitions;
+- failure-category meanings and boundaries;
+- domain invariants;
+- precedence, overlap, ambiguity, or conflict rules;
+- persistent/history semantics;
+- provenance or epistemic categorization;
+- externally or developer-visible behavior whose alternatives would change the accepted meaning of the feature;
+- another choice that would materially change what the product claims, preserves, reports, accepts, rejects, or treats as `Unknown`/unresolved.
+
+The existence of multiple possible implementations does **not** by itself mean semantic unreadiness. Implementation discretion remains legitimate when the alternatives preserve the same accepted semantics and differ only in mechanics such as:
+
+- private type/helper decomposition;
+- internal naming;
+- parser or adapter composition;
+- buffering versus streaming where no accepted behavior changes;
+- local algorithms/data structures where canonical outcomes remain equivalent;
+- incidental persistence/schema mechanics not themselves governed;
+- other private implementation choices that do not change externally, persistently, architecturally, or epistemically meaningful behavior.
+
+Executable acceptance tests cannot repair an underdetermined canonical requirement by choosing one interpretation and making it executable. Tests demonstrate accepted semantics; they do not supply missing canonical semantics.
+
+## 12A.1 Readiness assessment record
+
+Every material DEV-SPEC must contain a concise `Readiness assessment` section before entering `Ready for Implementation`. It records:
+
+- the canonical semantic basis relied upon for the acceptance contract;
+- any material semantic questions identified and their qualification IDs;
+- the material implementation discretion intentionally left open;
+- the semantic-readiness result: `Pending`, `Blocked`, or `Pass`.
+
+`Pass` may be recorded only when no unresolved material semantic choice must be originated by implementation. A generic statement such as "canonical basis reviewed" is insufficient when the slice depends on material truth conditions, thresholds, state/failure meanings, precedence, ambiguity, or comparable semantics.
+
+Historical `Implemented` DEV-SPECs are not rewritten merely to add this later process section. New specifications, replacement specifications, and existing specifications that have not yet validly entered implementation under the current process must use the current readiness rule.
+
+**Governance:** DEV-002 / D173.
+
+---
+
 # 13. Representative scenarios
 
 Representative scenarios are controlled examples selected to demonstrate one or more acceptance propositions.
@@ -466,6 +529,45 @@ A scenario should normally state which acceptance propositions it exercises.
 Small representative scenarios are preferred where they demonstrate the required behavior without introducing unrelated complexity.
 
 Negative/failure scenarios should be included where successful behavior alone cannot demonstrate an important boundary.
+
+## 13.1 Recognition/classification boundary-verification matrix
+
+Where a Development Slice makes material recognition, classification, evidence-threshold, parser-sensitive, or comparable accept/reject claims, representative examples alone are not sufficient. Before the slice may enter `Ready for Implementation`, the DEV-SPEC must contain an explicit **boundary/falsification verification matrix** derived from the already-governed canonical semantics.
+
+The matrix exists to demonstrate both sides of each material recognition predicate:
+
+- what minimum evidence is sufficient; and
+- what materially weaker, misleading, malformed, overlapping, or operational condition must remain insufficient or map to a different governed outcome.
+
+For each material recognition predicate, the DEV-SPEC must consider the following categories where applicable:
+
+1. positive / minimum sufficient evidence;
+2. each materially independent required condition absent or invalid where that omission can change the outcome;
+3. lookalike or misleading content;
+4. malformed/corrupt-candidate threshold;
+5. valid other or broader format;
+6. incidental token/name/prefix collisions or equivalent weak signals;
+7. container/subtype boundary;
+8. overlap or ambiguity with another independently supportable classification;
+9. parser/tool/resource/cancellation failure versus deterministic content invalidity;
+10. recognizer-order or equivalent execution-order independence.
+
+At least one **adversarial near-match** is required for every positive material recognition predicate. The near-match must preserve enough superficial similarity to exercise the risk of false recognition while deliberately lacking or violating a canonically required condition. Passing the positive case without such a falsification case is not sufficient completion evidence.
+
+The matrix should normally record, for each row:
+
+- canonical requirement / acceptance proposition;
+- boundary category;
+- controlled input condition;
+- expected governed outcome;
+- representative scenario or executable-test reference;
+- `Not applicable` rationale where a listed category genuinely does not apply.
+
+This is a **verification discipline, not a source of semantics**. Every expected outcome in the matrix must already be determined by the applicable canonical basis. If the expected outcome cannot be stated without choosing a material semantic interpretation, semantic readiness fails under §12A and the missing question must be governed before implementation. Tests must not make the choice.
+
+The matrix is risk-based rather than combinatorially exhaustive. It does not require enumeration of every possible malformed byte sequence or every permutation of conditions. It requires enough independent boundary cases to demonstrate that each material predicate is not accidentally satisfied by materially weaker evidence or parser/tool convenience.
+
+**Governance:** DEV-004 / D176.
 
 ---
 
@@ -496,7 +598,10 @@ The Development Slice Specification records:
 
 - the acceptance test suite/location;
 - the acceptance proposition IDs covered;
-- any durable verification-specific notes needed to understand coverage.
+- any durable verification-specific notes needed to understand coverage;
+- for applicable recognition/classification slices, the executable mapping from the §13.1 boundary/falsification matrix to acceptance verification.
+
+For a slice subject to §13.1, executable verification must exercise the material matrix rows. Supporting/unit tests may provide focused component diagnosis, but they do not replace observable slice-level verification of the governed recognition boundaries. A test that merely reproduces a parser/library default without demonstrating the LegacyRevive.NET governed outcome does not satisfy the boundary-verification obligation.
 
 It does not become a CI build-history log.
 
@@ -549,7 +654,7 @@ Verification Pending
 Implemented
 ```
 
-`Withdrawn` and `Superseded` are terminal historical outcomes.
+`Withdrawn`, `Superseded`, and `Rejected` are terminal historical outcomes.
 
 ## 16.1 Legal transitions
 
@@ -575,10 +680,11 @@ Verification Pending
  └──→ Withdrawn
 
 Implemented
- └──→ Superseded
+ ├──→ Superseded
+ └──→ Rejected
 ```
 
-`Withdrawn` and `Superseded` are terminal.
+`Withdrawn`, `Superseded`, and `Rejected` are terminal.
 
 Blocking does not change lifecycle state.
 
@@ -611,10 +717,12 @@ Before entering `Ready for Implementation`:
 - included/excluded scope must be explicit;
 - no material unresolved design question may be silently assumed;
 - the acceptance contract must be defined;
+- the semantic-readiness review in §12A must be `Pass`;
+- the `Readiness assessment` must identify the canonical semantic basis, any qualification blockers, and the material implementation discretion intentionally left open;
 - representative scenarios must be sufficient to begin;
 - executable verification approach must be identified.
 
-Entering this state establishes the acceptance contract as the implementation baseline.
+Entering this state establishes the acceptance contract as the implementation baseline. A DEV-SPEC is not ready merely because its wording is testable if the tests would themselves have to choose unresolved product semantics.
 
 ## 17.3 In Progress
 
@@ -636,9 +744,9 @@ A failure at this state normally returns the specification to `In Progress`.
 
 ## 17.5 Implemented
 
-All completion criteria defined by this process are satisfied.
+All applicable canonical and slice-specific completion criteria are judged satisfied.
 
-The specification becomes a durable, historically stable implementation/verification record.
+The specification becomes the current accepted implementation/verification record for that slice. Its lifecycle history is durable: a later finding that the completion judgment itself was materially unsound does not erase the `Implemented` transition, but may move the current status to `Rejected` under §17.8.
 
 ## 17.6 Withdrawn
 
@@ -648,9 +756,15 @@ A meaningful withdrawn specification is retained with a concise reason rather th
 
 ## 17.7 Superseded
 
-A later Development Slice Specification materially replaces an implemented specification.
+A later Development Slice Specification materially replaces a valid implemented specification.
 
 The earlier specification is retained and linked to the replacement.
+
+## 17.8 Rejected
+
+A specification is `Rejected` when it previously reached `Implemented`, but a later deliberate review establishes that the completion/acceptance judgment itself was materially unsound and the implementation is no longer accepted as a valid completed slice.
+
+`Rejected` is not a synonym for failed verification or ordinary abandonment. It preserves the historical `Implemented` transition while making the current disposition explicit. The rejection reason and governing qualification/decision must be recorded in lifecycle history.
 
 ---
 
@@ -658,7 +772,7 @@ The earlier specification is retained and linked to the replacement.
 
 Before `Ready for Implementation`, the specification may be materially refined.
 
-Entering `Ready for Implementation` creates an implementation baseline.
+Entering `Ready for Implementation` requires semantic-readiness `Pass` under §12A and creates an implementation baseline. If the material semantic choice test fails, the specification remains `Draft`, the missing design question is registered in `91`, and the canonical owner resolves it before readiness is reconsidered.
 
 After that point:
 
@@ -733,6 +847,8 @@ CI/test infrastructure owns transient run history.
 
 The Development Slice Specification owns the durable definition of what must be verified and where that verification lives.
 
+For a slice subject to §13.1, `Verification status` must also state whether the required boundary/falsification matrix is fully exercised and whether any matrix row remains pending, skipped, blocked, or intentionally `Not applicable`.
+
 ---
 
 # 21. Lightweight lifecycle history
@@ -777,30 +893,42 @@ Lifecycle history records **when and why the specification changed lifecycle pha
 
 # 22. Definition of Done
 
-A Development Slice Specification may transition from `Verification Pending` to `Implemented` only when all applicable completion conditions are satisfied.
+A Development Slice Specification may transition from `Verification Pending` to `Implemented` only when all applicable completion conditions are satisfied. "Applicable" includes both this canonical Definition of Done and any additional slice-specific completion conditions explicitly stated by the DEV-SPEC and consistent with canonical process.
 
 At minimum:
 
 1. the canonical basis remains valid and coherent;
 2. included/excluded scope remains explicit and consistent with canonical boundaries;
-3. every acceptance proposition is satisfied by the required repeatable verification;
-4. acceptance verification is automated where reasonably practicable;
-5. required supporting tests pass;
-6. no unresolved blocking qualification remains;
-7. implementation respects applicable architecture, tooling, evidence, MVP, and other canonical boundaries;
-8. actual executable-verification locations are recorded;
-9. required supporting-verification locations are recorded;
-10. verification status is updated to reflect completion;
-11. lifecycle history records the transition;
-12. any canonical/governance change exposed by the slice has completed its own required synchronization lifecycle.
+3. the semantic-readiness basis remains valid: implementation has not supplied a material product/design semantic that should have been canonically established, and any such issue discovered after readiness has completed governance before completion;
+4. every acceptance proposition is satisfied by the required repeatable verification;
+5. acceptance verification is automated where reasonably practicable;
+6. required supporting tests pass;
+7. no unresolved blocking qualification remains;
+8. implementation respects applicable architecture, tooling, evidence, MVP, and other canonical boundaries;
+9. actual executable-verification locations are recorded;
+10. required supporting-verification locations are recorded;
+11. verification status is updated to reflect completion;
+12. lifecycle history records the transition;
+13. any canonical/governance change exposed by the slice has completed its own required synchronization lifecycle.
 
-Code completion alone does not satisfy Definition of Done.
+For any slice subject to §13.1, the final Definition-of-Done audit must additionally confirm that:
+
+- the boundary/falsification matrix remains derived from current canonical semantics;
+- every positive material recognition predicate has at least one executable adversarial near-match;
+- applicable missing-condition, lookalike, malformed-candidate, broader/other-format, collision, container/subtype, overlap, operational-failure, and order-independence boundaries are exercised or have an explicit justified `Not applicable` entry;
+- expected outcomes were not supplied by parser/library behavior or implementation convenience;
+- no acceptance-bearing matrix row required for completion is silently skipped; and
+- any boundary that exposed underdetermined semantics was routed through governance before completion.
+
+Aggregate green test counts do not by themselves establish completion for a slice subject to §13.1.
+
+Code completion alone does not satisfy Definition of Done. Source-control commit is not a universal canonical lifecycle condition unless an applicable repository rule or the DEV-SPEC explicitly makes it a slice-specific completion condition. Where a DEV-SPEC does state such an additional completion condition, it is binding for that slice.
 
 ---
 
-# 23. Historical stability, withdrawal, and supersession
+# 23. Historical stability, withdrawal, supersession, and rejection
 
-An `Implemented` Development Slice Specification is historically stable.
+An `Implemented` Development Slice Specification has durable lifecycle history and is the current accepted implementation/verification record unless later superseded or rejected through the legal lifecycle.
 
 Permitted maintenance includes non-semantic corrections such as:
 
@@ -810,7 +938,7 @@ Permitted maintenance includes non-semantic corrections such as:
 
 Do not silently rewrite an implemented specification to make later implementation history appear as though it was always part of the original slice.
 
-Where later work materially replaces an implemented slice:
+Where later work materially replaces a valid implemented slice:
 
 1. create a new Development Slice Specification;
 2. retain the original specification;
@@ -820,7 +948,13 @@ Where later work materially replaces an implemented slice:
 
 Where a specification is abandoned before implementation completion, transition it to `Withdrawn` and record a concise reason.
 
-Meaningful withdrawn/superseded specifications remain part of project history.
+Where a specification has already reached `Implemented` but later governed review establishes that the completion/acceptance basis itself was materially unsound and the implementation is no longer accepted, transition it to `Rejected`. Append the rejection transition and reason; do not rewrite away the earlier `Implemented` event. This is distinct from ordinary failed verification, withdrawal, and supersession.
+
+Source-control history remains separate from lifecycle semantics. A missing commit is not by itself a universal rejection reason, but failure to satisfy an explicit slice-specific completion condition—including a commit condition where one was deliberately stated—may form part of the basis for rejecting an unsound completion judgment.
+
+A future replacement for a `Rejected` specification uses a new DEV-SPEC. It may use `Supersedes` / `Superseded by` to preserve replacement lineage, but the rejected specification remains `Rejected` because that status records the disposition of its own completion judgment.
+
+Meaningful withdrawn, superseded, and rejected specifications remain part of project history.
 
 ---
 
@@ -889,6 +1023,19 @@ Superseded by: None
 
 <Observable proposition.>
 
+## Readiness assessment
+
+Canonical semantic basis:
+- <canonical sections/decisions that determine material behavior>
+
+Material semantic questions:
+- None, or <qualification IDs>
+
+Implementation discretion intentionally left open:
+- <private/mechanical choices that do not change accepted semantics>
+
+Semantic readiness: Pending | Blocked | Pass
+
 ## Representative scenarios
 
 ### Scenario S1 — <Short name>
@@ -897,6 +1044,15 @@ Superseded by: None
 
 Verifies:
 - AC-<AREA>-001
+
+## Boundary/falsification verification
+
+Required when material recognition/classification/evidence-threshold semantics are in scope; otherwise state `Not applicable` with a concise rationale.
+
+| Acceptance / canonical predicate | Boundary category | Controlled condition | Expected governed outcome | Scenario / executable verification |
+|---|---|---|---|---|
+| AC-<AREA>-001 | Positive / minimum sufficient | ... | ... | ... |
+| AC-<AREA>-001 | Adversarial near-match | ... | ... | ... |
 
 ## Executable verification
 
@@ -924,7 +1080,7 @@ Pending.
 | <date> | Created → Draft | Initial specification |
 ```
 
-The template may be extended where a slice genuinely requires additional material.
+The template may be extended where a slice genuinely requires additional material. If a specification transitions to `Rejected`, add a concise `Rejection disposition` section recording the governing qualification/decision, why the prior completion judgment is no longer accepted, the disposition of the implementation/repository state, and any future replacement relationship. Historical verification and lifecycle entries remain in place.
 
 ---
 
@@ -1002,8 +1158,11 @@ This prevents implementation pressure from becoming an implicit design-authority
 | Qualification | Durable decision | Canonical rule |
 |---|---|---|
 | DEV-001 | D168 | Material implementation uses the canonical development process and durable Development Slice Specifications |
+| DEV-002 | D173 | A material DEV-SPEC must pass an explicit semantic-readiness gate before implementation may begin; unresolved material semantic choices return to governance rather than being delegated to implementation |
+| DEV-003 | D174 | A later finding that an `Implemented` completion judgment was materially unsound is preserved by `Implemented → Rejected`; failed verification, withdrawal, supersession, and source-control history remain distinct |
+| DEV-004 | D176 | Material recognition/classification slices require a canonically grounded boundary/falsification matrix, adversarial near-matches, and Definition-of-Done matrix-to-test coverage |
 
-DEV-001 is Resolved. The required canonical-document audit and cross-file governance synchronization have completed.
+DEV-001 through DEV-004 are Resolved. The required canonical-document audits and cross-file governance synchronization have completed.
 
 ---
 
@@ -1015,14 +1174,16 @@ This document owns:
 - Development Slice Specification purpose/status;
 - DEV-SPEC identity and repository convention;
 - required DEV-SPEC metadata and structure;
+- semantic-readiness criteria and readiness-assessment discipline;
 - acceptance-contract/scenario relationship;
+- recognition/classification boundary-falsification verification discipline;
 - executable versus supporting verification relationship;
 - DEV-SPEC lifecycle and transition rules;
 - acceptance baselining/mutability rules;
 - implementation-discovered qualification escalation;
 - lifecycle-history requirement;
 - Development Slice Definition of Done;
-- DEV-SPEC historical stability, withdrawal, and supersession.
+- DEV-SPEC historical stability, withdrawal, supersession, and rejection.
 
 This document does not own:
 

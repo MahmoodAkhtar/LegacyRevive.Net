@@ -146,7 +146,15 @@ Do not implement adjacent capability unless it is included by the active DEV-SPE
 
 Do not promote roadmap work into MVP implementation without the required governance process.
 
-### Acceptance baseline
+### Acceptance baseline and semantic readiness
+
+A Development Slice Specification may reach `Ready for Implementation` only after the semantic-readiness review required by `docs/canonical/16-development-process.md` is recorded as `Pass`.
+
+Before implementation begins, apply the material semantic choice test: if two implementations could make materially different product-semantic choices and both plausibly claim the canonical basis and acceptance wording permit them, the slice is not ready. Do not choose one interpretation in code or tests. Keep/return the specification to `Draft`, register the material issue in `91-design-qualification-register.md`, and wait for the canonical owner to resolve it through governance.
+
+Relevant material semantic choices include truth conditions, evidence/classification thresholds, state meanings, failure categories, domain invariants, precedence/ambiguity rules, persistent/history semantics, provenance/epistemic categories, and other externally or epistemically meaningful behavior.
+
+Private/mechanical alternatives remain implementation discretion when they preserve the same accepted semantics, including ordinary helper/type decomposition, internal naming, parser composition, local algorithms/data structures, buffering/streaming mechanics, and incidental storage details that are not themselves governed contracts.
 
 When a Development Slice Specification reaches `Ready for Implementation`, its acceptance
 contract becomes the implementation baseline.
@@ -159,6 +167,7 @@ Treat the active DEV-SPEC's following sections as the bounded implementation rec
 - `Canonical basis`;
 - `Scope`;
 - `Acceptance contract`;
+- `Readiness assessment`;
 - `Representative scenarios`;
 - `Executable verification`;
 - `Supporting verification`;
@@ -577,18 +586,20 @@ Avoid:
 Before making a material implementation change:
 
 1. identify the active Development Slice and DEV-SPEC;
-2. confirm its lifecycle status and blockers;
+2. confirm its lifecycle status and blockers; do not implement against a `Withdrawn`, `Superseded`, or `Rejected` DEV-SPEC;
 3. identify the canonical requirements and decisions being implemented;
-4. identify the expected architectural layer;
-5. identify which external dependencies, if any, are required;
-6. identify the acceptance proposition(s) affected;
-7. establish or update the required executable and supporting verification;
-8. preserve provenance, uncertainty, replay, integrity, and determinism semantics;
-9. implement only the smallest change required by the slice;
-10. run the relevant verification;
-11. update the DEV-SPEC verification and lifecycle material as required by
+4. confirm the DEV-SPEC semantic-readiness assessment is `Pass` and that implementation is not being asked to originate a material semantic choice;
+5. identify the expected architectural layer;
+6. identify which external dependencies, if any, are required;
+7. identify the acceptance proposition(s) affected;
+8. where the active slice contains material recognition/classification/evidence-threshold predicates, confirm its D176 boundary/falsification matrix is present, canonically grounded, and includes the required adversarial near-match for each positive material predicate;
+9. establish or update the required executable and supporting verification, including applicable boundary-matrix rows;
+10. preserve provenance, uncertainty, replay, integrity, and determinism semantics;
+11. implement only the smallest change required by the slice;
+12. run the relevant verification;
+13. update the DEV-SPEC verification and lifecycle material as required by
     `docs/canonical/16-development-process.md`;
-12. report and govern any material design ambiguity rather than silently resolving it.
+14. report and govern any material design ambiguity rather than silently resolving it.
 
 Before introducing a new:
 
@@ -623,6 +634,7 @@ Before treating a slice as `Implemented`, verify the Definition of Done in
 - included/excluded scope remains respected;
 - acceptance propositions are satisfied repeatably;
 - executable acceptance verification is present and passing;
+- where D176 applies, the boundary/falsification matrix is fully exercised, every positive material recognition predicate has an executable adversarial near-match, applicable rows are passing or explicitly justified as `Not applicable`, and aggregate green counts are not being used as a substitute for boundary coverage;
 - supporting verification is passing;
 - no unresolved blocking qualification remains;
 - architecture, tooling, evidence, provenance, determinism, and MVP boundaries are
@@ -630,6 +642,9 @@ Before treating a slice as `Implemented`, verify the Definition of Done in
 - actual verification locations are recorded;
 - verification status is updated;
 - lifecycle history is updated;
+- every explicit slice-specific completion condition that is compatible with the canonical process is satisfied;
 - any governance changes exposed by the slice have completed required synchronization.
 
-Code completion alone is not Development Slice completion.
+Code completion alone is not Development Slice completion. Source-control commit is not a universal lifecycle requirement unless the active DEV-SPEC or applicable repository process explicitly makes it a completion condition.
+
+If a DEV-SPEC that previously reached `Implemented` is later transitioned to `Rejected` under `16-development-process.md`, treat it as historical material only. Do not restore or continue its rejected implementation merely because its historical verification once passed. A replacement implementation requires a new active DEV-SPEC; preserve any supersession/replacement lineage without changing the rejected specification's disposition.

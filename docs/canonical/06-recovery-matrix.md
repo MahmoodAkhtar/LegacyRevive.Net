@@ -151,6 +151,132 @@ Where format-supported identities/checksums/metadata relationships are available
 
 ---
 
+# 5A. Stage 02 artifact format/family recognition contract
+
+Stage 02 classification is a direct, artifact-instance conclusion about **what format/family the preserved bytes actually establish**. It is not filename classification, later semantic extraction, or inference about historical ownership/use.
+
+## 5A.1 General recognition rule
+
+A format/family classification is established only when the Artifact instance satisfies the directly observable structural conditions defined here for that family.
+
+Filename, extension, relative path, and deployment position may:
+
+- select efficient recognizers/probes;
+- be retained as provenance/context;
+- corroborate a content-established classification;
+- contribute to a later companion-artifact relationship assessment.
+
+They are **not sufficient by themselves** to establish actual format/family.
+
+Stage 02 records the **most specific directly established classification**. If direct inspection establishes only a broader format, the broader classification remains current; LegacyRevive.NET must not manufacture a subtype merely because the subtype is common or because a filename suggests it.
+
+## 5A.2 Canonical classification outcomes
+
+Stage 02 must distinguish these outcomes where applicable:
+
+1. **Established** — the required recognition conditions for a supported family are satisfied.
+2. **Broader format established** — a broader valid format is established but a more specific family/subtype is not.
+3. **Valid but unsupported** — a valid known format is directly established but the MVP does not provide the corresponding deep analyzer/capability. This is not corruption.
+4. **Unsupported/unrecognized preserved content** — the bytes remain valid preserved input, but no supported or otherwise recognized format/family is established.
+5. **Ambiguous** — two or more materially incompatible classifications remain directly supportable after permitted Stage 02 inspection. Candidate classifications and the reason for ambiguity remain explicit.
+6. **Malformed/corrupt candidate** — content-level format evidence establishes a known-format candidate, but required structural conditions for that format fail. Filename/extension alone is insufficient to create this outcome.
+7. **Operational classification failure** — classification could not complete because of an operational/tool/resource/cancellation failure rather than because the bytes failed a format rule. No successful or malformed classification is fabricated from that failure.
+
+Parser rejection alone is not automatically evidence of corruption. The diagnostic must preserve whether rejection was caused by deterministic content invalidity, unsupported format/version, or an operational failure where that distinction can be established.
+
+## 5A.3 Overlap and precedence
+
+Recognition precedence is semantic rather than recognizer-order based:
+
+- where one classification is a directly established specialization of another, retain the most specific directly established classification;
+- where the broader format is established but subtype conditions are not, retain the broader format;
+- where two materially incompatible family contracts are independently satisfied and neither canonically subsumes the other, preserve `Ambiguous` rather than selecting by recognizer order, extension, or convenience;
+- recognition order must not change the substantive result for equivalent bytes and relevant configuration.
+
+## 5A.4 Stage 02 / Stage 03 inspection boundary
+
+Stage 02 may inspect internal structure **only as far as required to evaluate a recognition contract**. Such inspection may read metadata records, container entries, XML/JSON shape, resource presence, or other structural fields necessary to answer the classification question.
+
+Stage 02 persists only classification-bearing state and classification diagnostics. It does not persist unrelated semantic content merely because the recognizer encountered it. Reusable direct content such as dependency entries, type/member metadata, configuration values, PDB documents/sequence points, package dependencies, or resource payloads belongs to Stage 03 direct extraction/normalization.
+
+A later Stage 03 analyzer may reread the same preserved bytes. Avoiding duplicate reads is an implementation optimization and must not collapse the semantic boundary between classification and direct extraction.
+
+## 5A.5 MVP-relevant recognition contracts
+
+The following conditions define the minimum direct recognition contract for the current MVP families. They define classification truth conditions, not implementation APIs.
+
+| Family / format | Directly established when | Insufficient / corroborating only | Key malformed / unsupported boundary |
+|---|---|---|---|
+| Managed CLI artifact | PE/COFF is structurally valid, contains a CLR/CLI header, and the referenced CLI metadata root is readable as valid CLI metadata. | `.dll` / `.exe` name; `MZ` alone. | A valid PE with a CLR header whose required CLI metadata cannot be structurally read is a malformed/corrupt managed candidate, not a native PE. |
+| Managed CLI assembly (broad) | Managed CLI artifact plus a valid Assembly manifest/table establishes an assembly. | Presence of CLR metadata alone does not establish assembly rather than module. | A valid managed CLI module with no Assembly manifest is a valid managed module/netmodule; for MVP purposes it is valid-but-unsupported rather than malformed. |
+| Reference assembly | Managed CLI assembly plus an assembly-level custom attribute whose metadata-resolved type is exactly `System.Runtime.CompilerServices.ReferenceAssemblyAttribute`. | Simple attribute type name alone; absence of method bodies alone; filename/path such as `ref/`. | Absence of the attribute does not by itself prove implementation-assembly status. |
+| Satellite/resource assembly | Managed CLI assembly with non-neutral assembly culture, one or more manifest resources, and no executable implementation method bodies. | `.resources.dll` filename and culture-named directory are strong corroborating deployment signals but not sufficient alone; culture alone is insufficient. | Resource-bearing assemblies that do not satisfy the satellite conditions remain broader managed/resource-bearing assemblies; a companion-main-assembly relationship is Stage 04. |
+| Managed implementation assembly | Managed CLI assembly that is not directly established as a reference or satellite assembly and contains direct implementation-bearing evidence such as one or more executable managed method bodies or an executable entry point backed by implementation metadata. | Merely being a managed assembly; absence of `ReferenceAssemblyAttribute`; `.dll` / `.exe` name. | A valid managed assembly lacking enough direct subtype evidence remains `Managed CLI assembly (broad)` rather than being forced into implementation/reference/satellite. |
+| Native/non-managed PE | PE/COFF is structurally valid and no CLR/CLI header establishes a managed CLI artifact. | `.exe` / `.dll` extension. | A PE containing a CLR header with malformed CLI metadata is not reclassified as native merely because managed parsing failed. |
+| Classic .NET XML configuration | XML is well-formed and the document element is un-namespaced `configuration`. | `.config`, `app.config`, `web.config` filename; XML syntax alone. | A content-level `<configuration` candidate that is not well-formed XML may be malformed configuration; a misleading filename without content-level family evidence remains unrecognized/unsupported. Section semantics are Stage 03. |
+| Portable PDB | Standalone ECMA-335-style metadata is structurally readable and contains both required `#Pdb` and `#~` streams for standalone Portable PDB debugging metadata. | `.pdb` filename; metadata-root signature alone. | A valid other metadata blob is not a malformed Portable PDB. Content that establishes the Portable-PDB metadata shape but fails required stream structure is malformed/corrupt. Native Windows PDB remains optional MVP support under `14-mvp.md`. |
+| XML documentation | XML is well-formed, the document element is `doc`, and a direct `members` child is present. | `.xml` filename; an `assembly/name` element is corroborating but not required for family recognition. | Member/documentation semantics and correlation to an assembly are Stage 03/04. A content-level `<doc` candidate that cannot be parsed may be malformed XML documentation. |
+| `.deps.json` dependency context | JSON is well-formed; the root is an object; required top-level `runtimeTarget`, `targets`, and `libraries` members are objects; and `runtimeTarget.name` is a string. | `.deps.json` filename; isolated property names; arbitrary valid JSON. | Wrong required member shapes are malformed dependency-context candidates when the family-specific structure is otherwise established. Entry/cross-reference semantics are Stage 03. |
+| `.runtimeconfig.json` | JSON is well-formed; the root is an object; `runtimeOptions` exists and is an object. | `.runtimeconfig.json` filename; presence of a `runtimeOptions` property with a non-object value. | A family-specific `runtimeOptions` member with invalid required container shape is a malformed runtime-configuration candidate. Individual runtime-option semantics are Stage 03. |
+| `packages.config` | XML is well-formed with document element `packages`; each `package` entry used by the manifest has non-empty `id` and `version` attributes. | Filename alone; generic XML. | A `packages` manifest with structurally invalid package entries is a malformed packages-config candidate; dependency interpretation is Stage 03. |
+| `.nuspec` | XML is well-formed with document element `package`, a direct `metadata` element, and non-empty package `id` and `version`. | `.nuspec` filename; generic `<package>` XML without NuGet metadata structure; namespace/schema URI is corroborating/version context rather than the sole family discriminator. | Missing/invalid NuGet manifest structure after family-specific content is established is malformed NuSpec; full package metadata/dependency extraction and schema-version validation are Stage 03. |
+| `.nupkg` | The bytes form a readable ZIP package container and contain a root package `.nuspec` manifest that itself satisfies the NuSpec recognition contract. | `.nupkg` filename; ZIP signature/container alone. | A valid ZIP without a recognized NuSpec is a valid non-NuGet ZIP/unsupported format, not a malformed NuGet package. Corrupt ZIP structure with content-level package evidence may be a malformed NuGet-package candidate. |
+
+These are **minimum recognition contracts**. Stage 03 may apply richer format validation while extracting semantic content, but later extraction failure does not retroactively rewrite a Stage 02 classification unless it reveals that the Stage 02 recognition contract itself was not actually satisfied; such a correction follows the normal append-preserving reevaluation/supersession rules.
+
+### 5A.5.1 Malformed/corrupt family-candidate evidence thresholds
+
+A `Malformed/corrupt candidate` claim is itself a family-classification claim and therefore requires direct structural support. It may be made only when Stage 02 can directly establish a **family candidate discriminator** independently of the structural condition that failed.
+
+A family candidate discriminator is an exact structural fact, observed at the format-specific scope required by the family contract, that is sufficient to establish that the bytes are genuinely attempting or representing that known family even though the full successful-recognition contract cannot be completed. The discriminator must be established from preserved bytes/structure and must not be inferred from the failure itself.
+
+The following are insufficient by themselves to establish malformed/corrupt family candidacy:
+
+- filename, extension, supplied path, or directory placement;
+- a raw substring, byte sequence, partial name/prefix collision, or incidental occurrence inside text, comments, string values, payloads, or unrelated embedded content;
+- a parser exception or generic parser rejection;
+- a generic outer-format marker where the claimed subtype/family requires stronger evidence;
+- a tool/library-specific error category whose semantic meaning is not independently mapped to this contract.
+
+Deterministic partial structural inspection is permitted when complete parsing cannot succeed. Such inspection must establish exact tokens/records and their structural scope—for example document element, top-level JSON member, metadata-stream directory entry, or archive entry—rather than searching raw text. Parser/tokenizer choice remains implementation discretion provided equivalent bytes produce the same canonical candidate result. If the required discriminator cannot be established, Stage 02 retains the broader valid format where one is directly established, otherwise preserves unsupported/unrecognized content plus diagnostics; it does not fabricate a malformed family claim.
+
+For the current MVP families, the minimum malformed/corrupt candidate thresholds are:
+
+| Family / format | Minimum candidate discriminator when full recognition fails | Boundary that must remain distinct |
+|---|---|---|
+| Managed CLI artifact | Structurally valid PE/COFF plus a directly established CLR/CLI header. Failure to structurally read the referenced CLI metadata may then support malformed/corrupt managed candidacy. | `MZ`, PE naming, or CLR-like bytes outside a valid PE/CLI structural relationship do not establish a managed candidate. |
+| Managed CLI assembly/subtypes | A valid managed CLI artifact plus the relevant directly readable assembly/subtype structure required before the failing condition. Where subtype evidence is merely absent or insufficient, retain the broader managed CLI assembly/module result rather than creating malformed subtype state. | Failure to establish reference/satellite/implementation subtype conditions normally means broader classification, not malformed subtype candidacy. |
+| Classic .NET XML configuration | Token-aware partial XML structure establishes the **document-element** start tag with exact local name `configuration`; where namespace binding is structurally determinable it must be un-namespaced. | `<configurationBackup`, occurrences in comments/text/attributes, or unrelated nested elements do not establish a configuration candidate. If namespace status cannot be structurally established, it must not be assumed. |
+| Portable PDB | Standalone ECMA-335-style metadata structure is directly established far enough to identify an exact `#Pdb` stream-directory entry; failure of other required Portable-PDB stream structure, including required `#~`, may then support malformed/corrupt Portable-PDB candidacy. | Generic metadata, a metadata signature alone, `#~` alone, `.pdb` naming, or raw `#Pdb` byte occurrence outside a structurally identified stream entry is insufficient. |
+| XML documentation | Token-aware partial XML structure establishes the **document-element** start tag with exact local name `doc`. | `<document`, comments/text/attributes, or unrelated nested `doc` text/elements do not establish document-family candidacy. |
+| `.deps.json` dependency context | Token-aware partial JSON structure establishes a root object and exact **top-level** members `runtimeTarget`, `targets`, and `libraries`. Their required value/container shapes may then fail and support malformed dependency-context candidacy. | Isolated property-name text, names inside string values/nested objects, a subset of the three family-defining top-level members, or filename alone is insufficient. |
+| `.runtimeconfig.json` | Token-aware partial JSON structure establishes a root object and an exact **top-level** `runtimeOptions` member. Its required object/container shape may then fail and support malformed runtime-configuration candidacy. | `runtimeOptions` text inside a string/nested object, raw textual occurrence, or filename alone is insufficient. |
+| `packages.config` | Token-aware partial XML structure establishes the document element with exact local name `packages`. Invalid/malformed direct `package` entries may then support malformed packages-config candidacy. | Filename, generic XML, prefix/name collisions, or nested/incidental `packages` occurrences are insufficient. |
+| `.nuspec` | Token-aware partial XML structure establishes document element `package` **and** a direct child `metadata` element. Required package `id`/`version` structure may then fail and support malformed NuSpec candidacy. | A generic `package` root alone, `.nuspec` naming, namespace/schema URI alone, or incidental `metadata` text is insufficient. |
+| `.nupkg` | For a corrupt/unreadable ZIP container, partial archive structure must directly establish a **root** `.nuspec` entry and available manifest bytes must independently satisfy the NuSpec malformed-family candidate threshold above. | A readable ZIP without a NuSpec that satisfies the successful NuSpec recognition contract remains valid non-NuGet ZIP/unsupported. A root entry name ending `.nuspec`, raw `.nuspec` bytes, ZIP signature, or filename alone does not establish malformed NuGet-package candidacy. |
+
+This candidate threshold is deliberately weaker than successful recognition only where the family identity can still be directly established independently of the failed structural condition. It is not permission to infer family membership from likelihood, naming, parser behavior, or implementation convenience.
+
+**Governance:** RMAT-010 / D175.
+
+## 5A.6 Representative verification boundary
+
+Tests and fixtures must demonstrate the canonical contracts rather than define them. For each implemented recognizer, verification should include, where applicable:
+
+- positive canonical examples;
+- misleading-extension examples;
+- broader-valid-format examples;
+- valid-but-unsupported examples;
+- malformed candidates with content-level family evidence;
+- unsupported/unrecognized preserved content;
+- overlapping/ambiguous cases;
+- operational-failure mapping; and
+- invariance to recognizer execution order.
+
+**Governance:** RMAT-009 / D172; RMAT-010 / D175.
+
+---
+
 # 6. Managed implementation assemblies — `.dll` / managed `.exe`
 
 This row applies when the artifact is a managed CLI implementation assembly.
@@ -774,6 +900,8 @@ This document creates and resolves these Recovery Matrix qualifications:
 | `RMAT-006` | The matrix records artifact contribution and limitations; an artifact-instance profile records what was actually observed. |
 | `RMAT-007` | Irrecoverability statements are scoped to the available artifact set unless a stronger impossibility claim is justified. |
 | `RMAT-008` | Cross-artifact combination may strengthen recovery but does not erase evidence/inference distinctions or create one opaque recoverability score. |
+| `RMAT-009` | Stage 02 classification uses canonical direct format/family recognition contracts, preserves broad/unsupported/ambiguous/malformed/operational outcomes distinctly, and keeps reusable semantic extraction in Stage 03. |
+| `RMAT-010` | Malformed/corrupt family candidacy requires a directly established family-specific structural discriminator; raw substrings, names, parser rejection, and incidental text cannot fabricate family membership. |
 
 ---
 
@@ -791,6 +919,8 @@ The Recovery Matrix establishes these durable rules:
 8. Recovery limitations remain explicit.
 9. Recovery ceilings are scoped to the available artifact set.
 10. Cross-artifact recovery preserves epistemic categories.
+11. Stage 02 family classification is governed by direct format-specific recognition contracts rather than extension or recognizer order, and valid-but-unsupported artifacts remain distinct from malformed content.
+12. Malformed/corrupt family candidacy requires a direct family-specific structural discriminator at the correct scope; partial structural inspection may establish that discriminator, but raw substrings, name collisions, parser rejection, and generic outer-format evidence cannot.
 
 ---
 
@@ -804,7 +934,9 @@ The artifact-specific technical statements in this document were cross-checked a
 - .NET dependency-context / `.deps.json` documentation;
 - .NET runtime configuration documentation;
 - .NET resource/satellite-assembly documentation;
-- C# XML documentation output documentation.
+- C# XML documentation output documentation;
+- NuGet package, NuSpec, and `packages.config` format documentation;
+- PE/COFF and CLI metadata format documentation.
 
 These technical references inform artifact semantics.
 
@@ -843,7 +975,8 @@ This document owns:
 - artifact-instance versus artifact-type capability distinction;
 - missing-artifact semantics;
 - companion-artifact relationship rules;
-- recovery-ceiling wording.
+- recovery-ceiling wording;
+- artifact format/family recognition truth conditions used by Stage 02.
 
 `03-evidence-model.md` owns the underlying epistemic categories and provenance rules.
 

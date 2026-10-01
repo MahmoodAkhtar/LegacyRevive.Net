@@ -134,6 +134,10 @@ The MVP must directly analyze:
 - `.nuspec`;
 - satellite/resource assemblies where recognizable.
 
+This list defines **MVP coverage**, not the truth conditions by which an Artifact instance is recognized as one of these families. Stage 02 format/family recognition follows `06-recovery-matrix.md` §5A and the Stage 02 / Stage 03 boundary in `07-recovery-process.md` §4. A valid known format outside the supported analyzer set remains truthful preserved recovery state and must not be relabeled malformed merely because it is outside MVP deep-analysis support.
+
+**Governance:** RMAT-009 / D172.
+
 ## 4.2 Required preservation/correlation
 
 The MVP must:

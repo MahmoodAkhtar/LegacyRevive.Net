@@ -143,18 +143,36 @@ Determine what artifacts are present and what formats they actually represent.
 
 ## Required behavior
 
-For each supplied artifact:
+For each eligible supplied Artifact with trustworthy preserved bytes:
 
-- record path/identity;
-- detect artifact format/type;
-- distinguish extension from actual format;
-- classify the artifact family using `06-recovery-matrix.md`;
-- record corrupt, unreadable, unsupported, or ambiguous cases;
+- record/retain Artifact identity and supplied path/provenance;
+- detect actual Artifact format/type from the preserved Artifact instance;
+- distinguish filename/extension/context from actual format;
+- classify the Artifact family using the recognition contracts owned by `06-recovery-matrix.md` §5A;
+- retain the most specific directly established family, or the broader established format when subtype evidence is insufficient;
+- distinguish valid-but-unsupported, unsupported/unrecognized, ambiguous, malformed/corrupt candidate, and operational classification failure states;
+- record classification diagnostics at the narrowest reliable Artifact/classification scope;
 - identify possible companion-artifact relationships without silently accepting them.
+
+Stage 02 classification is deterministic from directly inspected bytes/structure and relevant recorded configuration where practical. Recognizer execution order, filename preference, or parser convenience must not change the substantive result.
+
+## Recognition/inspection boundary
+
+Stage 02 may inspect internal metadata/container/XML/JSON/resource structure only as necessary to decide the classification contract. It persists the classification result, candidate/ambiguity state where applicable, and classification diagnostics.
+
+Stage 02 does **not** persist reusable semantic content merely because a recognizer encountered it. Type/member metadata, dependency entries, runtime options, configuration values, package dependencies, PDB documents/sequence points, resource payloads, and comparable direct content belong to Stage 03 extraction/normalization.
+
+A structurally valid known artifact outside current MVP deep-analysis support remains valid-but-unsupported; it is not converted into malformed/corrupt state merely because no later analyzer exists. Conversely, an operational/tool/cancellation failure while classifying does not establish that the Artifact bytes are malformed.
+
+A malformed/corrupt family claim requires the family-specific candidate discriminator defined by `06-recovery-matrix.md` §5A.5.1. Stage 02 may use deterministic partial structural/token inspection to establish that discriminator when complete parsing fails, but filename/path evidence, raw substring matching, partial name collisions, incidental embedded text, generic outer-format markers, or parser rejection alone cannot establish family candidacy. If the discriminator is not directly established, Stage 02 retains a broader valid format where available or preserves unsupported/unrecognized content with diagnostics.
+
+If later direct extraction demonstrates that a Stage 02 recognition contract was not actually satisfied, normal dependency-aware reevaluation produces corrected current classification state without rewriting historical recovery state in place.
 
 ## Output
 
-Artifact-Instance Profiles.
+Artifact-Instance Profiles containing Stage 02 classification state and diagnostics, with deeper direct Observations deferred to Stage 03.
+
+**Governance:** RMAT-009 / D172; RMAT-010 / D175.
 
 ---
 
@@ -718,6 +736,7 @@ This document owns only:
 | `PROC-009` | Validation findings may trigger reevaluation, but Validation References remain outside Recovery Input. |
 | `PROC-010` | Stage 01 distinguishes supplied-source discovery from Artifact preservation; incomplete enumeration preserves safe known state without fabricating Artifacts or false completeness. |
 | `PROC-011` | Positive supplied-file discovery remains trustworthy when a later descendant-discovery operation for the same directory fails; the later failure narrows completeness rather than erasing established file state. |
+| `RMAT-009` | Stage 02 consumes the canonical format/family recognition contracts from `06`, persists only classification-bearing state/diagnostics, and leaves reusable direct semantic extraction to Stage 03. |
 
 ---
 
@@ -738,6 +757,7 @@ This document owns only:
 13. Validation feedback is separated from Validation Reference leakage.
 14. Stage 01 discovery incompleteness remains explicit: root discovery failure cannot masquerade as a known-empty snapshot, while safe partial subtree progress may be retained without fabricating undiscovered Artifacts.
 15. A workable baseline does not imply exact reproduction or behavioural equivalence.
+16. Stage 02 classification uses directly observable recognition contracts from `06`; structurally valid unsupported formats, malformed candidates, ambiguity, and operational failures remain distinct, and Stage 03 owns reusable semantic extraction.
 
 ---
 
@@ -769,7 +789,8 @@ This document owns:
 - build-diagnostic feedback semantics;
 - Recovery Workspace / Recovery Run / Recovery Checkpoint;
 - partial/blocked/baseline process states;
-- Stage 01 supplied-source discovery, discovery-completeness, and discovery-failure semantics.
+- Stage 01 supplied-source discovery, discovery-completeness, and discovery-failure semantics;
+- Stage 02 classification workflow, outcome handling, and the Stage 02 / Stage 03 inspection-output boundary.
 
 `03`–`06` own the semantic models consumed by this process.
 

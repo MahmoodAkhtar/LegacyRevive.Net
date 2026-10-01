@@ -535,6 +535,7 @@ The governance update is not complete until these checks agree.
 | DOC-021 | Stale Validation Result Terminology After Validation Model Finalization | Resolved | Audit Finding | `02-terminology.md` |
 | DOC-022 | Stale Qualification Summary Count During Workspace Governance Synchronization | Resolved | Audit Finding | `91-design-qualification-register.md` |
 | DOC-023 | Premature Canonical Status During DEV-001 Governance | Resolved | Audit Finding | `00-ai-context.md` / `13-tooling-and-dependencies.md` / `14-mvp.md` / `16-development-process.md` |
+| DOC-024 | Stale Qualification Summary After Stage 01 Follow-Up Qualifications | Resolved | Audit Finding | `91-design-qualification-register.md` |
 | GOV-001 | Normative End-to-End Governance Lifecycle | Resolved | Audit Finding | `91-design-qualification-register.md` |
 | GOV-002 | Qualification Status Transition Rules | Resolved | Audit Finding | `91-design-qualification-register.md` |
 | GOV-003 | Decision Replacement Rule | Resolved | Audit Finding | `90-decisions.md` |
@@ -572,6 +573,8 @@ The governance update is not complete until these checks agree.
 | RMAT-006 | Matrix vs Artifact-Instance Output | Resolved | Boundary Issue | `06-recovery-matrix.md` |
 | RMAT-007 | Recovery Ceiling Wording | Resolved | Question | `06-recovery-matrix.md` |
 | RMAT-008 | Cross-Artifact Recovery Semantics | Resolved | Question | `06-recovery-matrix.md` |
+| RMAT-009 | Stage 02 Artifact Format and Family Recognition Contract | Resolved | Boundary Issue | `06-recovery-matrix.md` / `07-recovery-process.md` |
+| RMAT-010 | Malformed Family-Candidate Evidence Threshold | Resolved | Ambiguity | `06-recovery-matrix.md` |
 | PROC-001 | Canonical Recovery Process Shape | Resolved | Question | `07-recovery-process.md` |
 | PROC-002 | Stage Progression and Epistemic Category | Resolved | Boundary Issue | `07-recovery-process.md` |
 | PROC-003 | Earliest-Affected-Stage Reevaluation | Resolved | Question | `07-recovery-process.md` |
@@ -689,6 +692,9 @@ The governance update is not complete until these checks agree.
 | ROAD-011 | Collaborative and Enterprise Scale | Resolved | Deferred Decision | `15-roadmap.md` |
 | ROAD-012 | Native and Runtime Recovery | Resolved | Boundary Issue | `15-roadmap.md` |
 | DEV-001 | Canonical Development Process and Development Slice Specifications | Resolved | Question | `16-development-process.md` |
+| DEV-002 | Semantic Readiness of a Development Slice | Resolved | Boundary Issue | `16-development-process.md` |
+| DEV-003 | Post-Implemented Rejection of a Development Slice | Resolved | Ambiguity | `16-development-process.md` |
+| DEV-004 | Recognition Boundary and Falsification Verification | Resolved | Validation Need | `16-development-process.md` |
 
 ---
 
@@ -3000,6 +3006,198 @@ D053
 
 ---
 
+
+## RMAT-009 — Stage 02 Artifact Format and Family Recognition Contract
+
+Status: Resolved  
+Type: Boundary Issue  
+Origin: Post-implementation review of rejected `DEV-SPEC-004-stage-02-artifact-format-and-family-classification.md`, 2026-09-30  
+Owner document: `06-recovery-matrix.md` / `07-recovery-process.md`  
+Depends on: D002, D047, D048, D051, D054, D055, D134  
+Blocks: replacement Stage 02 Artifact format/family classification Development Slice Specification and implementation
+
+### Qualification
+
+What directly observable conditions are required to establish each MVP-relevant Stage 02 Artifact format/family, and how should the canonical model distinguish sufficient recognition, insufficient recognition, malformed/corrupt candidate content, valid-but-unsupported content, ambiguity, conflicting or overlapping format signals, and operational classification failure without crossing improperly into Stage 03 semantic extraction?
+
+Which parts of that recognition contract are owned by the Recovery Matrix as artifact-family semantics, and which parts are owned by the Recovery Process as the Stage 02 / Stage 03 process boundary?
+
+### Why it matters
+
+The existing canonical model requires LegacyRevive.NET to inspect the actual Artifact instance, distinguish actual format from filename extension, classify materially different Artifact families, and preserve corrupt, unsupported, unreadable, and ambiguous conditions explicitly.
+
+However, the rejected DEV-SPEC-004 attempt demonstrated that these broad requirements do not by themselves determine the materially significant recognition rules needed for implementation.
+
+Without a sufficiently explicit canonical recognition contract, an implementation agent must choose product-semantic thresholds itself, such as:
+
+- what structure is sufficient to recognize `.runtimeconfig.json`;
+- what structure is sufficient to recognize `.deps.json`;
+- what directly establishes a reference assembly;
+- what directly establishes a satellite/resource assembly;
+- how a structurally valid managed artifact outside the supported family set is represented;
+- when candidate content is malformed rather than merely unsupported or unrecognized;
+- how overlapping or conflicting recognition signals are handled; and
+- how much internal inspection Stage 02 may perform before it becomes Stage 03 extraction.
+
+Those choices affect the truth conditions of Artifact-instance classification and therefore must not arise accidentally from parser implementation.
+
+The rejected implementation is evidence that the design boundary was insufficiently specified. Its chosen rules are not evidence that those rules are correct.
+
+### Current understanding
+
+The following direction is already accepted:
+
+- Artifact-type capability does not establish Artifact-instance content; actual Artifact instances must be inspected.
+- Filename extension alone is insufficient to establish actual Artifact format.
+- The Recovery Matrix distinguishes materially different Artifact families because they have materially different recovery capabilities and limitations.
+- Artifact-instance findings remain separate from Recovery Matrix capability statements.
+- Stage 02 detects actual Artifact format/type, distinguishes it from extension, classifies the Artifact family, and preserves corrupt, unreadable, unsupported, and ambiguous conditions.
+- Stage 03 performs direct extraction and normalization of artifact content after classification.
+- Stage progression does not promote an item's epistemic category.
+- The MVP already identifies the Artifact families that require analyzer/classification coverage.
+
+What is not yet established sufficiently is the normative recognition contract connecting direct Artifact-instance observations to a particular Stage 02 format/family conclusion.
+
+The issue does not by itself expand MVP Artifact-family coverage. A valid artifact that lies outside the supported family set may require an explicit truthful outcome without thereby becoming a new MVP deep-analysis capability.
+
+### Resolution criteria
+
+This qualification can be resolved when the project has deliberately established:
+
+1. the canonical ownership boundary between artifact-family recognition semantics in `06-recovery-matrix.md` and Stage 02 / Stage 03 process semantics in `07-recovery-process.md`;
+2. the general canonical recognition model applicable to Stage 02 Artifact classification;
+3. for each MVP-relevant Artifact family, what kinds of directly observable characteristics may be:
+   - required;
+   - sufficient;
+   - insufficient by themselves;
+   - corroborating but non-decisive;
+   - conflicting;
+4. how the recognition model represents:
+   - directly established classification;
+   - broader-but-not-more-specific classification;
+   - unsupported or unrecognized readable content;
+   - structurally valid but unsupported Artifact formats;
+   - malformed/corrupt candidate content;
+   - ambiguous classification;
+   - overlapping recognition signals;
+   - operational read/parser/classification failure;
+5. how recognition precedence or overlap is handled where one Artifact satisfies characteristics of more than one candidate family;
+6. how much structural inspection Stage 02 may perform solely to establish classification without persisting unrelated Stage 03 observations;
+7. whether recognition criteria require artifact-specific canonical sections, a common recognition-contract structure, or another owner-consistent representation;
+8. how representative positive, negative, boundary, malformed, ambiguous, and adversarial examples should demonstrate the accepted semantics without turning test fixtures into the canonical definition; and
+9. what synchronization is required across the Recovery Matrix, Recovery Process, MVP references, decision log, qualification register, and later Development Slice Specification.
+
+### Resolution
+
+RMAT-009 is resolved by establishing a canonical Stage 02 Artifact format/family recognition contract split across the two existing owners rather than introducing a new semantic owner.
+
+`06-recovery-matrix.md` now owns the format/family **recognition truth conditions**. Classification is based on directly inspected preserved bytes/structure, never extension alone. Stage 02 records the most specific directly established family, retains a broader format where subtype evidence is insufficient, and preserves distinct outcomes for valid-but-unsupported, unsupported/unrecognized, ambiguous, malformed/corrupt candidate, and operational classification failure. Malformed-family status requires content-level candidate evidence; filename/extension alone cannot create it. Compatible hierarchical classifications use the most specific directly established subtype, while incompatible independently supported classifications remain ambiguous rather than being resolved by recognizer order.
+
+The Recovery Matrix now defines minimum recognition contracts for the current MVP families: managed CLI artifact/assembly, reference assembly, satellite/resource assembly, managed implementation assembly, native/non-managed PE, classic XML configuration, Portable PDB, XML documentation, `.deps.json`, `.runtimeconfig.json`, `packages.config`, `.nuspec`, and `.nupkg`. A valid managed CLI module/netmodule without an Assembly manifest is explicitly valid-but-unsupported for current MVP deep analysis rather than malformed.
+
+`07-recovery-process.md` now owns the Stage 02 workflow and Stage 02 / Stage 03 boundary. Stage 02 may inspect internal metadata/container/XML/JSON/resource structure only as far as necessary to decide the classification contract and persists only classification-bearing state/diagnostics. Reusable semantic content remains Stage 03 direct extraction/normalization. Later extraction may trigger normal reevaluation if it reveals that the earlier recognition contract was not actually satisfied; history is not rewritten in place.
+
+`14-mvp.md` is synchronized to make clear that its analyzer list defines MVP coverage, while the recognition truth conditions remain owned by `06`/`07`; valid known formats outside the analyzer set remain truthful preserved state rather than being relabeled malformed.
+
+The technical recognition criteria were checked against the existing external technical baseline used by `06`, including .NET runtime/dependency configuration, reference-assembly, satellite-resource, Portable PDB, PE/CLI, and NuGet format documentation. The governed audit found no conflict with the Evidence Model, architecture analyzer boundary, tooling ownership, or MVP scope.
+
+### Decision reference
+
+D172
+
+### Resolved in
+
+`06-recovery-matrix.md` §5A; `07-recovery-process.md` §4; synchronized in `14-mvp.md` §4.1
+
+---
+
+## RMAT-010 — Malformed Family-Candidate Evidence Threshold
+
+Status: Resolved  
+Type: Ambiguity  
+Origin: Post-implementation review of rejected `DEV-SPEC-005-stage-02-artifact-format-and-family-classification.md`, 2026-10-01  
+Owner document: `06-recovery-matrix.md`  
+Depends on: RMAT-009, D172, D173  
+Blocks: readiness of the replacement Stage 02 Artifact format/family classification Development Slice Specification
+
+### Qualification
+
+What minimum directly observable structural evidence is required before content that fails full recognition may be represented as a malformed/corrupt candidate of a known Stage 02 Artifact family, rather than remaining unsupported/unrecognized content or a broader valid format?
+
+In particular, when the enclosing XML, JSON, metadata, archive, or comparable structure is itself malformed or only partially readable, what evidence is sufficient to establish that the content is genuinely a candidate of the claimed family without allowing filename, extension, incidental substrings, partial name collisions, parser accidents, or unrelated embedded text to fabricate family membership?
+
+### Why it matters
+
+RMAT-009 / D172 established that malformed-family state requires content-level family-candidate evidence and that extension, filename, generic syntax, parser rejection, and unrelated valid formats are insufficient. It also established family-specific successful-recognition contracts.
+
+Post-implementation review of DEV-SPEC-005 nevertheless exposed a remaining semantic boundary. The implementation used permissive lexical checks such as occurrence of `<configuration`, `<doc`, or JSON property-name text to infer malformed family candidates. Those checks can produce materially different Stage 02 claims from stricter token-aware or structural approaches while each might plausibly be argued to satisfy wording such as "content-level candidate" or "family-specific structure is otherwise established."
+
+The issue is therefore not whether malformed-family claims require direct evidence; that is already settled. The unresolved point is the **minimum admissible candidate-evidence threshold when full structural recognition cannot complete**.
+
+This boundary affects what LegacyRevive.NET claims about supplied Original Artifact bytes. A false malformed-family claim is stronger than preserving the content as unsupported/unrecognized and would collapse uncertainty into an unsupported classification. Conversely, a threshold that is unnecessarily strict could lose directly supportable malformed-family information.
+
+The `.nupkg` rule for a readable ZIP is not reopened by this qualification: RMAT-009/D172 already establishes that a valid ZIP without a recognized NuSpec remains a valid non-NuGet ZIP/unsupported format, not a malformed NuGet package. The qualification concerns the general and family-specific threshold for establishing malformed/corrupt **candidate** evidence when full recognition fails.
+
+### Current understanding
+
+The following remain accepted and are not reopened:
+
+- Stage 02 classification is based on directly inspected preserved bytes/structure, not extension or filename alone.
+- Successful family recognition uses the minimum contracts already established by RMAT-009/D172.
+- Malformed/corrupt candidate state is distinct from unsupported/unrecognized content, valid-but-unsupported format, ambiguity, and operational classification failure.
+- Parser rejection alone does not automatically establish corruption or family membership.
+- A valid broader format remains the truthful result when subtype evidence is insufficient.
+- Tool/library categories do not define LegacyRevive.NET product semantics.
+- Reusable semantic extraction remains Stage 03.
+
+What remains unresolved is whether and how partial structural evidence below the successful-recognition threshold may establish family candidacy strongly enough to support a malformed/corrupt family claim.
+
+### Resolution criteria
+
+This qualification can be resolved when the project has deliberately established:
+
+1. a general rule for the minimum direct evidence required to establish malformed/corrupt family candidacy when full recognition fails;
+2. whether that threshold must be structural/token-aware rather than raw substring/name occurrence, and how incidental textual occurrence is excluded;
+3. how the rule distinguishes:
+   - malformed known-family candidate;
+   - unsupported/unrecognized malformed content;
+   - valid broader format with unrecognized subtype content;
+   - valid other format;
+   - operational parser/tool failure;
+4. any family-specific candidate thresholds needed for XML configuration, XML documentation, `.deps.json`, `.runtimeconfig.json`, `packages.config`, `.nuspec`, `.nupkg`, Portable PDB/metadata, PE/CLI, or other in-scope Stage 02 families;
+5. how prefix/name collisions and incidental embedded text are prevented from establishing family evidence;
+6. how partial-read or corrupt-container evidence is treated without allowing implementation-specific parser behavior to define the product claim;
+7. whether the existing wording in `06-recovery-matrix.md` §5A is sufficient after clarification or requires explicit candidate-recognition clauses per family; and
+8. what synchronization is required across D172, `06-recovery-matrix.md`, `07-recovery-process.md`, `16-development-process.md`, the replacement DEV-SPEC, and implementation-facing guidance.
+
+### Resolution
+
+RMAT-010 is resolved by establishing that malformed/corrupt family candidacy is itself an evidence-bearing classification claim and therefore requires a directly observed **family candidate discriminator** at the correct structural scope. The discriminator must be established independently of the condition that failed and must be strong enough to distinguish genuine family candidacy from naming, incidental text, generic outer-format structure, or parser behavior.
+
+The general rule is now canonical in `06-recovery-matrix.md` §5A.5.1:
+
+- filename, extension, supplied path, raw substring occurrence, partial-name/prefix collision, incidental text/string/payload content, generic parser rejection, and tool-specific error categories are insufficient by themselves;
+- deterministic partial structural/token inspection is permitted when complete parsing fails, but it must establish exact canonical tokens/records at the required scope rather than search raw text;
+- parser/tokenizer mechanics remain implementation discretion only where they preserve the same canonical candidate result;
+- if the discriminator is not established, Stage 02 retains a broader valid format where available or preserves unsupported/unrecognized content and diagnostics rather than fabricating malformed family membership.
+
+The Recovery Matrix now defines family-specific thresholds for managed CLI, XML configuration, Portable PDB, XML documentation, `.deps.json`, `.runtimeconfig.json`, `packages.config`, `.nuspec`, and `.nupkg`, while preserving broad managed assembly/subtype fallback semantics. In particular, malformed JSON candidacy requires root/top-level structural member evidence rather than raw property-name text; XML candidacy requires exact document-element/direct-child structural evidence rather than textual prefix matching; Portable-PDB candidacy requires structurally identified `#Pdb` stream evidence; and corrupt-NuGet candidacy requires structured root-NuSpec evidence plus manifest content that independently establishes NuSpec candidacy.
+
+The existing readable-ZIP NuGet rule is unchanged: a valid ZIP without a NuSpec satisfying the successful NuSpec recognition contract remains a valid non-NuGet ZIP/unsupported format, not a malformed NuGet package.
+
+`07-recovery-process.md` Stage 02 is synchronized to require these discriminators before a malformed/corrupt family claim may be emitted. No Stage 03 boundary, MVP analyzer scope, Evidence Model category, architecture boundary, or tooling choice is changed. `16-development-process.md` requires no RMAT-010-specific semantic change because its existing D173 readiness gate already routes unresolved recognition thresholds to governance; the separate verification-process strengthening remains owned by open DEV-004.
+
+A targeted governance audit found no conflict with RMAT-009/D172, D173 semantic readiness, Stage 02/Stage 03 ownership, the Evidence Model, architecture/tooling ownership, or MVP scope. DEV-004 remains Open and is now able to define the separate verification/falsification discipline against this settled semantic basis; RMAT-010 itself no longer blocks the replacement Stage 02 specification once DEV-004 is resolved.
+
+### Decision reference
+
+D175
+
+### Resolved in
+
+`06-recovery-matrix.md` §5A.5.1 and §§26–27; synchronized with `07-recovery-process.md` §4. DEV-004 remains the open development-process verification qualification.
+
+---
 
 # 20. Recovery-process qualifications
 
@@ -7077,6 +7275,47 @@ None required. D168 already establishes the durable direction; this finding corr
 
 ---
 
+## DOC-024 — Stale Qualification Summary After Stage 01 Follow-Up Qualifications
+
+Status: Resolved  
+Type: Audit Finding  
+Origin: Registration audit for RMAT-009, DEV-002, and DEV-003, 2026-09-30  
+Owner document: `91-design-qualification-register.md`  
+Depends on: None  
+Blocks: None
+
+### Qualification
+
+The register's current summary states that 175 qualifications are tracked and resolved, while the register index and full entries contain 177 existing resolved qualifications before RMAT-009, DEV-002, and DEV-003 are added. The two unreflected qualifications are PROC-010 and PROC-011.
+
+### Why it matters
+
+The qualification register is the single source of truth for qualification status. Its derived summary counts and domain summaries must agree with the actual governed index; otherwise a later governance action can use an incorrect baseline and compound the bookkeeping error.
+
+### Current understanding
+
+The register index is authoritative for the tracked qualification set. Before the current registration update, it contains 177 unique qualification IDs and each has a corresponding full entry with `Status: Resolved`.
+
+The stale `175` summary and the statement that nine `PROC-*` qualifications are resolved were not synchronized after PROC-010 and PROC-011 were added and resolved. Correcting those derived counts and summary wording does not change either qualification's status or establish new product direction.
+
+### Resolution criteria
+
+Recount the register index, verify one-to-one correspondence between index rows and full qualification entries, update the current-summary totals and Recovery Process qualification count from that authoritative set, and then incorporate the newly registered qualifications using the corrected baseline.
+
+### Resolution
+
+The pre-registration register was recounted and contains 177 unique qualification IDs, all Resolved, with one matching full entry per index row. PROC-010 and PROC-011 account for the two qualifications missing from the previous `175` summary baseline. The current summary and Recovery Process summary are corrected accordingly. After additionally registering RMAT-009, DEV-002, and DEV-003 as Open and this audit finding as Resolved, the register contains 181 tracked qualifications: 178 Resolved and 3 Open.
+
+### Decision reference
+
+None required; this is a register bookkeeping correction and establishes no new durable project direction.
+
+### Resolved in
+
+`91-design-qualification-register.md` current summary.
+
+---
+
 # 29. Workspace materialization and export qualifications
 
 ## ARCH-014 — Local Recovery Workspace Physical Boundary
@@ -7371,6 +7610,350 @@ D168
 
 ---
 
+## DEV-002 — Semantic Readiness of a Development Slice
+
+Status: Resolved  
+Type: Boundary Issue  
+Origin: Post-implementation review of rejected `DEV-SPEC-004-stage-02-artifact-format-and-family-classification.md`, 2026-09-30  
+Owner document: `16-development-process.md`  
+Depends on: D016, D017, D020, D168, RMAT-009  
+Blocks: readiness of the replacement Stage 02 Artifact format/family classification Development Slice Specification
+
+### Qualification
+
+What level of semantic determinacy is required before an acceptance-bearing Development Slice Specification may enter `Ready for Implementation`, so that implementation is free to choose implementation mechanics but is not forced to originate materially significant product semantics, evidence thresholds, classification truth conditions, domain invariants, failure meanings, or acceptance standards?
+
+### Why it matters
+
+The canonical Development Process already establishes that:
+
+- canonical documents own product/design semantics;
+- Development Slice Specifications are subordinate and non-canonical;
+- code, tests, and Development Slice Specifications must not silently resolve material design questions;
+- material ambiguities discovered during implementation return to the `91` governance process; and
+- `Ready for Implementation` requires no material unresolved design question to be silently assumed.
+
+The rejected DEV-SPEC-004 attempt therefore does not demonstrate that the project lacks a rule prohibiting implementation from inventing product semantics.
+
+It exposes a narrower problem.
+
+DEV-SPEC-004 passed a readiness assessment, established an acceptance contract, and proceeded through implementation and verification. Subsequent review nevertheless established that materially significant recognition truth conditions had not been defined. To implement the acceptance contract, the implementation agent necessarily had to choose among materially different semantic interpretations.
+
+The process may therefore need a more explicit readiness test for determining when a specification is semantically determinate enough to delegate to implementation.
+
+Without such a boundary, a DEV-SPEC can appear complete at the acceptance level while still embedding phrases whose truth conditions can only be supplied by implementation choices.
+
+### Current understanding
+
+D168 and `16-development-process.md` already establish the general authority boundary:
+
+- design governance and canonical documents determine product/design semantics;
+- a DEV-SPEC operationalizes accepted semantics for one bounded implementation increment;
+- implementation and tests cannot create or reinterpret canonical semantics;
+- a material ambiguity exposed during implementation must be registered in `91`.
+
+The existing `Ready for Implementation` criteria require:
+
+- identified canonical basis;
+- explicit included/excluded scope;
+- no silently assumed material unresolved design question;
+- a defined acceptance contract;
+- representative scenarios sufficient to begin; and
+- an identified executable-verification approach.
+
+The open issue is not whether implementation agents are permitted to invent semantics; they are not.
+
+The open issue is whether the readiness criteria provide a sufficiently explicit method for detecting when an apparently concrete acceptance proposition still requires the implementer to decide materially significant semantic meaning.
+
+Implementation mechanics should remain implementation choices where canonical behavior is already determined. Examples may include private decomposition, helper organization, buffering or streaming mechanics, internal naming, parser composition, and other choices that do not change externally or epistemically meaningful behavior.
+
+### Resolution criteria
+
+This qualification can be resolved when the project has deliberately established:
+
+1. how a DEV-SPEC author/readiness review determines whether an acceptance-bearing requirement is semantically determinate enough for implementation;
+2. what kinds of unresolved choices indicate that a requirement is still a design question rather than implementation discretion;
+3. how the process distinguishes:
+   - accepted semantic obligations;
+   - acceptance-level specification;
+   - implementation mechanics;
+4. whether readiness requires explicit treatment of material:
+   - truth conditions;
+   - classification/evidence thresholds;
+   - state meanings;
+   - failure categories;
+   - domain invariants;
+   - precedence/ambiguity rules;
+   where those are necessary to satisfy the slice;
+5. how a readiness review should react when multiple materially different implementations could all plausibly claim to satisfy the same acceptance wording because the underlying canonical semantics are incomplete;
+6. whether a specific semantic-readiness check should be added to the `Ready for Implementation` criteria, readiness assessment, Definition of Done, or another appropriate part of `16-development-process.md`;
+7. how the rule remains general and lightweight rather than requiring every implementation detail to be canonically predetermined;
+8. how implementation retains legitimate freedom over mechanics after semantic readiness is established; and
+9. what synchronization is required in `16-development-process.md`, D168 or a new durable decision, `AGENTS.md`, and other implementation-facing guidance.
+
+### Resolution
+
+The project adopts an explicit semantic-readiness gate for material Development Slice Specifications.
+
+A DEV-SPEC may enter `Ready for Implementation` only when the applicable canonical basis plus the bounded specification determine the materially significant semantic meaning of the acceptance-bearing behavior sufficiently that implementation can choose mechanics without inventing product/design semantics.
+
+The readiness review applies the **material semantic choice test**:
+
+> **Could two implementations make materially different semantic choices and both plausibly claim that the current canonical basis and acceptance wording permit them?**
+
+If yes because the authoritative semantics do not determine the choice, semantic readiness fails. The specification remains or returns to `Draft` before implementation, the missing semantic question is registered in `91`, and the appropriate canonical owner resolves it before readiness is reconsidered. If the issue is discovered during implementation, the existing implementation-discovered qualification/blocking flow applies.
+
+Material semantic choices include, where relevant:
+
+- truth conditions for classifications, states, accepted outcomes, or comparable product claims;
+- evidence, recognition, or classification thresholds;
+- state meanings/transitions;
+- failure categories and boundaries;
+- domain invariants;
+- precedence, overlap, ambiguity, or conflict rules;
+- persistence/history semantics;
+- provenance or epistemic categorization; and
+- other externally or developer-visible behavior whose alternatives materially change what LegacyRevive.NET claims, preserves, reports, accepts, rejects, or leaves unresolved.
+
+The existence of multiple possible implementations does not itself indicate semantic unreadiness. Private decomposition, internal naming, parser/adapter composition, buffering/streaming, local algorithms/data structures, incidental persistence mechanics, and similar choices remain implementation discretion when all alternatives preserve the same accepted semantics and architectural/tooling constraints.
+
+Each material DEV-SPEC now includes a concise `Readiness assessment` recording the canonical semantic basis, material semantic qualification blockers if any, implementation discretion intentionally left open, and `Pending` / `Blocked` / `Pass`. `Ready for Implementation` requires `Pass`.
+
+Executable tests cannot make an underdetermined requirement semantically ready by selecting one interpretation. Tests demonstrate accepted semantics; they do not create the missing canonical rule.
+
+Definition of Done additionally requires that the semantic-readiness basis still holds and that implementation did not silently originate a material product/design semantic that should have passed through governance.
+
+The rule is deliberately lightweight and does not require canonical predesign of private implementation mechanics. Historical `Implemented` DEV-SPECs are not rewritten merely to add the later readiness-assessment section.
+
+RMAT-009/D172 provides the concrete motivating example: once family-specific Stage 02 recognition truth conditions were canonically defined, a replacement Stage 02 DEV-SPEC can now derive acceptance from those semantics without delegating recognition thresholds to implementation.
+
+### Decision reference
+
+D173
+
+### Resolved in
+
+`16-development-process.md` §§9, 12A, 17.2, 18, 22, 25, 30–31; synchronized with `AGENTS.md` implementation-facing guidance.
+
+
+---
+
+## DEV-003 — Post-Implemented Rejection of a Development Slice
+
+Status: Resolved  
+Type: Ambiguity  
+Origin: Post-implementation review and repository rollback of `DEV-SPEC-004-stage-02-artifact-format-and-family-classification.md`, 2026-09-30  
+Owner document: `16-development-process.md`  
+Depends on: D020, D022, D168, D173  
+Blocks: None
+
+### Qualification
+
+How should LegacyRevive.NET represent a Development Slice Specification that has transitioned to `Implemented` after its stated verification passed, but whose entire implementation is subsequently rejected before durable acceptance/commit because later review establishes that the acceptance/design basis itself was materially inadequate?
+
+### Why it matters
+
+The current Development Slice lifecycle defines:
+
+- `Implemented` as a completed, historically stable implementation/verification record;
+- `Withdrawn` as a specification whose slice will not proceed under that specification;
+- `Superseded` as an implemented specification materially replaced by a later Development Slice Specification.
+
+The current legal transition model permits `Implemented` only to transition to `Superseded`.
+
+The rejected DEV-SPEC-004 attempt does not fit those semantics cleanly:
+
+- the working specification transitioned to `Implemented`;
+- its executable and supporting verification passed as then defined;
+- later review established that the underlying acceptance/design basis was insufficient;
+- the entire production/test implementation was rejected;
+- repository implementation was restored to the accepted post-DEV-SPEC-003 baseline;
+- the rejected implementation was not retained as accepted implementation history;
+- no later Development Slice Specification yet exists to supersede DEV-SPEC-004;
+- leaving DEV-SPEC-004 as `Implemented` would misleadingly imply that it remains a valid stable implementation/verification record;
+- the existing withdrawal rule is framed around abandonment before implementation completion.
+
+Deleting DEV-SPEC-004 would also lose meaningful development and governance history.
+
+The lifecycle therefore appears not to explicitly represent a completion judgment that is later itself rejected before becoming durable accepted implementation history.
+
+### Current understanding
+
+The following remain established:
+
+- lifecycle history must preserve material historical transitions rather than rewrite them away;
+- an `Implemented` specification is intended to be historically stable;
+- later materially replacing an accepted implemented slice normally uses a new DEV-SPEC and supersession;
+- meaningful withdrawn or superseded specifications remain preserved;
+- durable design decisions are superseded rather than silently rewritten;
+- ordinary source-control history and DEV-SPEC lifecycle history have different purposes.
+
+The current situation must not be resolved by silently pretending that DEV-SPEC-004 never reached `Implemented`.
+
+It must also not be resolved by leaving `Implemented` as the current state if that would falsely assert that the rejected slice remains a valid implementation/verification record.
+
+No current lifecycle status or transition should be reinterpreted, and no new lifecycle state should be invented, before this qualification is deliberately resolved.
+
+The fact that the rejected implementation was uncommitted is relevant historical context, but the current canonical model has not established whether source-control commit status should be a lifecycle semantic.
+
+### Resolution criteria
+
+This qualification can be resolved when the project has deliberately established:
+
+1. how to represent a prior `Implemented` transition whose completion judgment is subsequently found unsound;
+2. whether the correct model should:
+   - use an existing lifecycle state with clarified semantics;
+   - introduce a new lifecycle state or transition;
+   - distinguish implementation completion from durable acceptance;
+   - use another explicit history-preserving mechanism;
+3. whether and how the lifecycle model distinguishes:
+   - failed verification before `Implemented`;
+   - implementation abandoned before completion;
+   - later replacement of a valid implemented slice;
+   - rejection of the completion/acceptance basis itself after `Implemented`;
+4. whether source-control commit or another durable repository-acceptance event has any canonical relationship to DEV-SPEC lifecycle, without conflating lifecycle history with ordinary version-control history;
+5. how lifecycle history preserves the fact that the specification did reach `Implemented` under the then-current judgment while making the current rejected status equally clear;
+6. how a rejected specification is retained as meaningful historical material without implying that its implementation remains accepted;
+7. how future replacement work relates to the rejected specification, including whether supersession is appropriate and under what conditions;
+8. the correct immediate durable treatment of DEV-SPEC-004 once the qualification is resolved; and
+9. what updates are required to lifecycle states, legal transitions, Definition of Done, historical stability rules, the standard DEV-SPEC template, and implementation-facing guidance.
+
+### Resolution
+
+The project introduces a terminal `Rejected` lifecycle status for the narrow case where a Development Slice Specification previously reached `Implemented`, but later deliberate review establishes that the completion/acceptance judgment itself was materially unsound and the implementation is no longer accepted as a valid completed slice.
+
+The legal transition is:
+
+```text
+Implemented
+    ↓
+Rejected
+```
+
+The historical `Implemented` transition is not deleted or rewritten. The later rejection is appended to lifecycle history with its reason and governing qualification/decision, preserving both the fact that completion was previously judged satisfied and the later fact that the judgment was invalidated.
+
+`Rejected` is deliberately distinct from:
+
+- failed verification before `Implemented`, which normally returns `Verification Pending → In Progress`;
+- abandonment before valid completion, which uses `Withdrawn`;
+- later replacement of a valid implemented slice, which uses `Superseded`; and
+- ordinary source-control history.
+
+The project does not add a separate durable-acceptance lifecycle phase and does not make source-control commit a universal lifecycle condition. `Implemented` remains the accepted completion judgment after all applicable canonical and slice-specific completion conditions are judged satisfied. Explicit slice-specific completion conditions that are compatible with the canonical process are binding for that slice. A later discovery that such a condition was not actually satisfied may contribute to a governed `Implemented → Rejected` transition.
+
+For DEV-SPEC-004 specifically, the current durable treatment is:
+
+- retain the specification and its full historical lifecycle;
+- change current `Status` from `Implemented` to `Rejected`;
+- append an `Implemented → Rejected` lifecycle event dated 2026-09-30;
+- preserve the historical 77/77 verification result as a statement about verification under the then-defined contract, not as evidence that the completion judgment remains accepted;
+- record that post-implementation review established materially inadequate Stage 02 recognition semantics, leading to rejection of the implementation and restoration of the post-DEV-SPEC-003 repository baseline;
+- additionally record that DEV-SPEC-004's own stated completion condition requiring the implementation to be committed as a coherent Development Slice had not been satisfied; and
+- retain `Supersedes: None` / `Superseded by: None` until a later replacement DEV-SPEC exists.
+
+A later replacement Stage 02 slice must be a new DEV-SPEC. It may use the supersession metadata to preserve replacement lineage to the rejected DEV-SPEC-004, but DEV-SPEC-004 remains `Rejected` rather than becoming `Superseded`, because rejection records the disposition of its own completion judgment.
+
+No new material qualification was exposed by this resolution. DEV-003 therefore closes the post-DEV-SPEC-004 governance set together with RMAT-009/D172 and DEV-002/D173.
+
+### Decision reference
+
+D174
+
+### Resolved in
+
+`16-development-process.md` §§8, 16–17, 22–25, 30–31; synchronized with `AGENTS.md` and the retained `DEV-SPEC-004-stage-02-artifact-format-and-family-classification.md`.
+
+---
+
+## DEV-004 — Recognition Boundary and Falsification Verification
+
+Status: Resolved  
+Type: Validation Need  
+Origin: Post-implementation review of rejected `DEV-SPEC-005-stage-02-artifact-format-and-family-classification.md`, 2026-10-01  
+Owner document: `16-development-process.md`  
+Depends on: D168, D173, RMAT-009, RMAT-010, D175  
+Blocks: readiness and completion criteria of the replacement Stage 02 Artifact format/family classification Development Slice Specification
+
+### Qualification
+
+What systematic boundary and falsification-oriented verification must an acceptance-bearing recognition/classification Development Slice Specification define before it may enter implementation and later be judged `Implemented`, so that executable tests demonstrate not only representative success cases but also that weaker, misleading, near-match, malformed, overlapping, and parser-sensitive evidence cannot accidentally satisfy or fabricate the governed recognition claim?
+
+### Why it matters
+
+DEV-002 / D173 established the semantic-readiness gate: implementation must not originate material product semantics, and tests cannot repair underdetermined canonical requirements by choosing one interpretation. DEV-SPEC-005 applied that rule, derived a detailed acceptance contract from RMAT-009/D172, required positive and negative recognizer coverage, and completed with 127/127 passing tests.
+
+Post-implementation review nevertheless found material recognition-boundary defects that the executable suite did not expose. The tests demonstrated the representative examples that had been specified, but they did not systematically try to falsify each recognition predicate with adversarial near-matches. For example, a valid ZIP containing a root `.nuspec` filename whose content did not establish a NuSpec family could be misrepresented as malformed NuGet, while loose textual checks could overstate malformed XML/JSON family candidacy.
+
+The Development Process currently requires representative scenarios and says negative/failure scenarios should be included where successful behavior alone cannot demonstrate an important boundary. That direction is sound but may be too discretionary for classifiers whose correctness depends as much on rejecting insufficient evidence as on accepting sufficient evidence.
+
+The open question is therefore procedural rather than a request to move recognition semantics into `16-development-process.md`: once a canonical owner defines a material recognition/evidence boundary, what minimum verification discipline must a DEV-SPEC use to demonstrate that implementation respects both sides of that boundary?
+
+### Current understanding
+
+The following remain accepted and are not reopened:
+
+- canonical documents own product/design semantics; DEV-SPECs operationalize them;
+- semantic readiness under D173 remains mandatory;
+- executable acceptance tests demonstrate accepted semantics but do not create missing semantics;
+- representative scenarios are examples, not canonical definitions;
+- negative/failure scenarios are already expected where successful behavior alone cannot demonstrate an important boundary;
+- supporting tests do not substitute for slice-level acceptance verification; and
+- implementation mechanics remain free where they preserve accepted semantics.
+
+The unresolved point is whether recognition/classification slices require a more explicit, systematic boundary-verification model before `Ready for Implementation` and/or before `Implemented`, and what that model should minimally contain without turning the process into exhaustive combinatorial testing.
+
+### Resolution criteria
+
+This qualification can be resolved when the project has deliberately established:
+
+1. whether material recognition/classification DEV-SPECs require an explicit boundary/falsification verification section or matrix;
+2. the minimum categories that must be considered for each material recognition predicate, where applicable, such as:
+   - positive/minimum sufficient evidence;
+   - one-required-condition-missing cases;
+   - lookalike or misleading content;
+   - malformed-candidate boundary;
+   - valid other/broader format;
+   - incidental token/name/prefix collision;
+   - container/subtype boundary;
+   - overlap/ambiguity;
+   - parser/tool/operational failure;
+   - recognizer-order independence;
+3. whether every positive recognition predicate must include at least one adversarial near-match proving that materially weaker evidence does not satisfy it;
+4. how this verification obligation differs from semantic readiness and avoids allowing tests to define missing canonical semantics;
+5. how the obligation scales so that it is rigorous for evidence-sensitive classifiers without requiring exhaustive input enumeration;
+6. whether the requirement belongs in readiness, representative-scenario guidance, executable verification, Definition of Done, or a combination of those sections;
+7. what evidence a final Definition-of-Done audit must inspect before accepting a classifier slice as `Implemented`; and
+8. what synchronization is required across `16-development-process.md`, `AGENTS.md`, future DEV-SPEC templates/guidance, and DEV-SPEC-006.
+
+
+### Resolution
+
+LegacyRevive.NET adopts a mandatory boundary/falsification verification discipline for material recognition/classification Development Slices.
+
+Before `Ready for Implementation`, an applicable DEV-SPEC must contain an explicit boundary/falsification verification matrix derived from the already-governed canonical semantics. For each material recognition predicate it must record the minimum sufficient evidence and, where applicable, materially independent missing-condition cases, lookalike/misleading content, malformed-candidate boundaries, valid broader/other formats, incidental token/name/prefix collisions, container/subtype boundaries, overlap/ambiguity, parser/tool/operational failure, and recognizer-order independence.
+
+Every positive material recognition predicate requires at least one adversarial near-match that preserves superficial similarity while lacking or violating a canonically required condition. This is the minimum falsification obligation; the process does not require exhaustive enumeration of every malformed input or combinatorial permutation. Categories that genuinely do not apply may be marked `Not applicable` only with an explicit rationale.
+
+The matrix is verification structure, not semantic authority. Each expected outcome must be traceable to the canonical basis. If the expected outcome cannot be stated without selecting a material semantic interpretation, the specification fails D173 semantic readiness and the missing question is governed before implementation. Tests cannot choose the missing rule.
+
+Executable acceptance verification must exercise the materially applicable matrix rows. Supporting/unit tests may diagnose individual recognizers, but do not replace slice-level acceptance verification. Parser/library defaults do not count as product semantics unless LegacyRevive.NET explicitly maps them to the governed outcome.
+
+Before `Verification Pending → Implemented`, the Definition-of-Done audit must inspect matrix-to-test coverage, confirm the required adversarial near-match for every positive material predicate, confirm applicable boundary categories are exercised or explicitly justified as `Not applicable`, confirm no acceptance-bearing matrix row is silently skipped, and confirm any semantic gap exposed by boundary design was governed before completion. Aggregate green test counts are insufficient by themselves.
+
+This requirement is deliberately scoped to slices where recognition/classification/evidence-threshold boundaries are material. It does not impose a universal boundary matrix on ordinary implementation slices where those semantics are absent.
+
+A targeted governance audit found no conflict with D168, D173, RMAT-009/D172, RMAT-010/D175, the Evidence Model, tooling ownership, architecture boundaries, or MVP scope. The rule strengthens verification discipline without moving recognition truth conditions into `16-development-process.md`.
+
+### Decision reference
+
+D176
+
+### Resolved in
+
+`16-development-process.md` §§13.1, 14, 20, 25 and applicable Definition-of-Done guidance; synchronized with `AGENTS.md`. DEV-SPEC-006 must apply D176 when created.
+
+---
+
 # 31. Adding new qualifications
 
 When future document audits uncover new unresolved or material resolved points:
@@ -7395,13 +7978,13 @@ Documents may reference qualification IDs, but this register remains the single 
 As of this version of the register:
 
 ```text
-Resolved qualifications: 175
+Resolved qualifications: 183
 Open qualifications:      0
 In Review qualifications: 0
 Blocked qualifications:   0
 Deferred qualifications:  0
 Superseded qualifications: 0
-Total tracked:            175
+Total tracked:            183
 ```
 
 The resolved qualifications consist of:
@@ -7418,13 +8001,15 @@ Seven `INTV-*` qualifications were identified and resolved during generation/aud
 
 Eight `CONV-*` qualifications were identified and resolved during generation/audit of `05-convention-inference.md`, establishing scoped, provenance-bearing convention observations and anti-feedback-loop rules.
 
-Eight `RMAT-*` qualifications were identified and resolved during generation/audit of `06-recovery-matrix.md`, establishing artifact contribution classes, artifact-instance boundaries, companion-artifact rules, and recovery ceilings.
+Ten `RMAT-*` qualifications are resolved. RMAT-001 through RMAT-008 establish artifact contribution classes, artifact-instance boundaries, companion-artifact rules, and recovery ceilings. RMAT-009/D172 establishes the normative Stage 02 Artifact format/family recognition contract, family-specific minimum recognition conditions, explicit non-success/unsupported outcomes, overlap rules, and the Stage 02 / Stage 03 inspection-output boundary. RMAT-010/D175 establishes the minimum direct structural candidate-discriminator threshold for malformed/corrupt family candidacy and prevents names, raw substrings, parser rejection, or incidental text from fabricating family membership.
+
+Four `DEV-*` qualifications are resolved. DEV-004/D176 adds mandatory risk-based boundary/falsification verification for material recognition/classification Development Slices, including an adversarial near-match for every positive material recognition predicate and Definition-of-Done matrix-to-test coverage review.
 
 `DOC-018` records and resolves a stale Evidence Model status sentence discovered in `01-purpose-and-principles.md` during this cycle.
 
-`DOC-019` records and resolves the whole-set epistemic taxonomy/glossary synchronization issue and is linked to D160. `DOC-020` is now Resolved by synchronizing the existing D124/D147/D153 boundary: remote enrichment is post-MVP capability scope while `NuGet.Protocol` remains the contingent selected adapter. `DOC-021` records and resolves stale validation-result terminology discovered by the subsequent whole-set re-audit. `DOC-022` records and resolves the stale qualification-summary count found during workspace governance synchronization. `DOC-023` records and resolves premature canonical-status wording discovered by the DEV-001/D168 Step 6 audit while preserving DEV-001 itself as `In Review`.
+`DOC-019` records and resolves the whole-set epistemic taxonomy/glossary synchronization issue and is linked to D160. `DOC-020` is now Resolved by synchronizing the existing D124/D147/D153 boundary: remote enrichment is post-MVP capability scope while `NuGet.Protocol` remains the contingent selected adapter. `DOC-021` records and resolves stale validation-result terminology discovered by the subsequent whole-set re-audit. `DOC-022` records and resolves the stale qualification-summary count found during workspace governance synchronization. `DOC-023` records and resolves premature canonical-status wording discovered by the DEV-001/D168 Step 6 audit while preserving DEV-001 itself as `In Review`. `DOC-024` records and resolves the stale qualification-summary baseline discovered during the RMAT-009/DEV-002/DEV-003 registration audit after PROC-010 and PROC-011 had been added without corresponding summary synchronization.
 
-Nine `PROC-*` qualifications were identified and resolved during generation/audit of `07-recovery-process.md`, establishing the canonical stage sequence, iterative reevaluation model, build-feedback boundary, workspace/run/checkpoint semantics, and recovery completion states.
+Eleven `PROC-*` qualifications are resolved. PROC-010 and PROC-011 additionally establish the Stage 01 semantics for incomplete supplied-directory enumeration and for preserving trustworthy positive file discovery when later descendant discovery fails.
 
 Ten `PROJ-*` qualifications were identified and resolved during generation/audit of `08-project-reconstruction.md`, establishing Candidate Project boundaries, assembly anchoring, dependency-representation rules, alternative candidate handling, and generated project/solution artifact boundaries.
 
@@ -7442,7 +8027,9 @@ Eighteen `MVP-*` qualifications are resolved. MVP-017 and MVP-018 additionally d
 
 Twelve `ROAD-*` qualifications were identified and resolved during generation/audit of `15-roadmap.md`, establishing evidence-gated post-MVP horizons, promotion criteria, core-first sequencing, enrichment/inference/host/plugin/scale boundaries, validation growth, and native/runtime research boundaries.
 
-`DEV-001` is Resolved through D168 and canonical `16-development-process.md`. The governed process establishes Development Slice thresholds, durable non-canonical per-slice `DEV-SPEC-*` specifications, acceptance/verification discipline, metadata and lifecycle/history rules, qualification escalation, Definition of Done, and historical supersession semantics. DOC-023 records the audit-stage correction that prevented `16` from being presented as fully canonical before the DEV-001 synchronization lifecycle completed.
+`DEV-001` is Resolved through D168 and canonical `16-development-process.md`. DEV-002 is Resolved through D173: material DEV-SPECs require an explicit semantic-readiness assessment before implementation delegation. DEV-003 is Resolved through D174: an `Implemented` completion judgment that is later deliberately found materially unsound transitions to terminal `Rejected` while preserving the historical `Implemented` event; failed verification, withdrawal, supersession, and source-control history remain distinct. DEV-SPEC-004 is retained as the first historical application of that rule. DOC-023 records the earlier audit-stage correction that prevented `16` from being presented as fully canonical before the DEV-001 synchronization lifecycle completed.
+
+One qualification is currently Open and continues to block the replacement Stage 02 classification slice: DEV-004 requires the Development Process to settle the boundary/falsification verification discipline for evidence-sensitive recognition/classification DEV-SPECs. RMAT-010/D175 is resolved and supplies the malformed/corrupt candidate-evidence semantics that DEV-004 verification must demonstrate.
 
 ---
 
